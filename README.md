@@ -1,36 +1,89 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 我的第一次 - First-Go App
 
-## Getting Started
+一个帮助用户记录和完成“第一次”体验的应用，使用 AI 生成个性化教程。
 
-First, run the development server:
+## 功能特性
+
+- 🎯 **AI 生成教程**：输入"我第一次想做什么"，AI 自动生成 6-7 步详细教程
+- ✅ **交互式完成**：右滑标记步骤完成，支持撤销
+- 📊 **进度追踪**：实时显示教程进度
+- 🏅 **勋章系统**：完成教程获得勋章
+- 📱 **历史记录**：查看过往所有教程
+- 🎨 **现代 UI**：基于 Tailwind CSS，支持暗黑模式
+
+## 技术栈
+
+- **前端**: Next.js 16 (App Router) + React 19 + TypeScript
+- **样式**: Tailwind CSS v4
+- **后端**: Supabase (Auth + Postgres + Realtime)
+- **AI**: Server-side 调用（目前为 mock，可接入 OpenAI/其他 AI 服务）
+
+## 快速开始
+
+### 1. 安装依赖
+
+```bash
+npm install
+```
+
+### 2. 配置环境变量
+
+复制 `.env.local.example` 为 `.env.local` 并填写：
+
+```
+NEXT_PUBLIC_SUPABASE_URL=你的 Supabase URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY=你的 Supabase Anon Key
+```
+
+### 3. 设置数据库
+
+在 Supabase SQL Editor 中按顺序执行：
+- `scripts/schema.sql`
+- `scripts/rls.sql`
+- `scripts/profiles_trigger.sql`
+
+### 4. 运行开发服务器
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+访问 http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 开发
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+# 开发模式
+npm run dev
 
-## Learn More
+# 构建
+npm run build
 
-To learn more about Next.js, take a look at the following resources:
+# 启动生产服务器
+npm start
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# 运行测试
+npm test
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Lint 检查
+npm run lint
+```
 
-## Deploy on Vercel
+## 项目结构
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+/app                 # Next.js App Router 页面
+/components          # React 组件
+/lib                 # 工具函数（AI、Supabase 等）
+/types               # TypeScript 类型定义
+/scripts             # SQL 脚本
+/__tests__           # 测试文件
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 部署
+
+详见 [DEPLOY.md](./DEPLOY.md)
+
+## 许可证
+
+MIT
