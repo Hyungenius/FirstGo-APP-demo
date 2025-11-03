@@ -35,33 +35,48 @@ export function buildTutorialPrompt(inputText: string): string {
   ].join("\n");
 }
 
+interface RawAIResponse {
+  title?: unknown;
+  description?: unknown;
+  items?: unknown[];
+  steps?: unknown[];
+  tags?: unknown[];
+  difficulty?: unknown;
+}
+
 export function parseAIOutput(resp: unknown): AiTutorialStructured {
   if (!resp || typeof resp !== "object") {
     throw new Error("AI 输出无效：不是对象");
   }
-  const r = resp as any;
+  const r = resp as RawAIResponse;
   const title = typeof r.title === "string" && r.title.trim() ? r.title.trim() : "Untitled";
   const description = typeof r.description === "string" ? r.description : undefined;
 
-  const itemsSrc: any[] = Array.isArray(r.items) ? r.items : [];
+  const itemsSrc: unknown[] = Array.isArray(r.items) ? r.items : [];
   const items: AiItem[] = itemsSrc
     .filter((it) => it && typeof it === "object")
-    .map((it) => ({
-      name: String(it.name ?? "").trim(),
-      qty: typeof it.qty === "string" ? it.qty : undefined,
-      note: typeof it.note === "string" ? it.note : undefined,
-    }))
+    .map((it) => {
+      const item = it as Record<string, unknown>;
+      return {
+        name: String(item.name ?? "").trim(),
+        qty: typeof item.qty === "string" ? item.qty : undefined,
+        note: typeof item.note === "string" ? item.note : undefined,
+      };
+    })
     .filter((it) => it.name.length > 0)
     .slice(0, 12);
 
-  const stepsSrc: any[] = Array.isArray(r.steps) ? r.steps : [];
+  const stepsSrc: unknown[] = Array.isArray(r.steps) ? r.steps : [];
   const steps: AiStep[] = stepsSrc
     .filter((st) => st && typeof st === "object")
-    .map((st) => ({
-      title: String(st.title ?? "").trim(),
-      summary: String(st.summary ?? "").trim(),
-      detail_prompt: typeof st.detail_prompt === "string" ? st.detail_prompt : undefined,
-    }))
+    .map((st) => {
+      const step = st as Record<string, unknown>;
+      return {
+        title: String(step.title ?? "").trim(),
+        summary: String(step.summary ?? "").trim(),
+        detail_prompt: typeof step.detail_prompt === "string" ? step.detail_prompt : undefined,
+      };
+    })
     .filter((st) => st.title.length > 0 && st.summary.length > 0);
 
   // 约束：6–7 步，若不足用占位补齐，不超过 7 步
@@ -73,7 +88,7 @@ export function parseAIOutput(resp: unknown): AiTutorialStructured {
   }
 
   const tags: string[] | undefined = Array.isArray(r.tags)
-    ? r.tags.map((t: any) => String(t)).filter(Boolean).slice(0, 8)
+    ? r.tags.map((t) => String(t)).filter(Boolean).slice(0, 8)
     : undefined;
   const difficulty = typeof r.difficulty === "string" ? r.difficulty : undefined;
 
@@ -84,7 +99,7 @@ export function parseAIOutput(resp: unknown): AiTutorialStructured {
  * 仅用于开发阶段的伪实现：返回固定教程结构
  * 注意：真实实现只应在 Server 环境调用第三方 AI
  */
-export async function callAI(prompt: string): Promise<AiTutorialStructured> {
+export async function callAI(_prompt: string): Promise<AiTutorialStructured> {
   // 模拟网络耗时
   await new Promise((r) => setTimeout(r, 200));
 

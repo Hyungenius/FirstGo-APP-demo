@@ -13,9 +13,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let body: any;
+  let body: { input_text?: string };
   try {
-    body = await req.json();
+    body = (await req.json()) as { input_text?: string };
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
@@ -86,8 +86,9 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ tutorialId }, { status: 201 });
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message ?? "Internal Error" }, { status: 500 });
+  } catch (e) {
+    const errorMessage = e instanceof Error ? e.message : "Internal Error";
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
 

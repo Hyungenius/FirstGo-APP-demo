@@ -1,9 +1,8 @@
 import Link from "next/link";
+import type { RouteParams } from "@/types/route";
 
-export default async function CompletePage(
-  ctx: { params: Promise<{ id: string }> } | { params: { id: string } }
-) {
-  const resolvedParams = (await (ctx as any).params) ?? (ctx as any).params;
+export default async function CompletePage(ctx: RouteParams) {
+  const resolvedParams = "then" in ctx.params ? await ctx.params : ctx.params;
   const id = resolvedParams?.id as string;
   return (
     <div className="mx-auto flex min-h-[60vh] w-full max-w-2xl flex-col items-center justify-center gap-6 p-6 text-center">

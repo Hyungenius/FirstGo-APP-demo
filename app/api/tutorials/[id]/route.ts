@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server";
 import { getServerSupabase } from "@/lib/serverSupabase";
+import type { RouteParams } from "@/types/route";
 
-export async function GET(
-  _req: Request,
-  ctx: { params: Promise<{ id: string }> } | { params: { id: string } }
-) {
+export async function GET(_req: Request, ctx: RouteParams) {
   const supabase = await getServerSupabase();
 
   const {
@@ -12,7 +10,7 @@ export async function GET(
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const resolvedParams = (await (ctx as any).params) ?? (ctx as any).params;
+  const resolvedParams = "then" in ctx.params ? await ctx.params : ctx.params;
   const tutorialId = resolvedParams?.id as string;
   if (!tutorialId) return NextResponse.json({ error: "id required" }, { status: 400 });
 

@@ -28,7 +28,13 @@ export default function StepDetailContent({ tutorialId, stepId }: StepDetailCont
         const res = await fetch(`/api/tutorials/${tutorialId}`, { credentials: "include", cache: "no-store" });
         const data = await res.json();
         if (!res.ok) throw new Error(data?.error || `加载失败（${res.status}）`);
-        const target = (data?.steps || []).find((s: any) => s.id === stepId);
+        const target = (data?.steps || []).find((s: {
+          id: string;
+          title: string;
+          summary: string | null;
+          detail: string | null;
+          ord: number;
+        }) => s.id === stepId);
         if (!target) throw new Error("步骤不存在");
         if (cancelled) return;
         setStep({
@@ -37,8 +43,8 @@ export default function StepDetailContent({ tutorialId, stepId }: StepDetailCont
           detail: target.detail,
           ord: target.ord,
         });
-      } catch (e: any) {
-        if (!cancelled) setError(e?.message ?? "加载失败");
+      } catch (e) {
+        if (!cancelled) setError(e instanceof Error ? e.message : "加载失败");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -63,8 +69,9 @@ export default function StepDetailContent({ tutorialId, stepId }: StepDetailCont
         if (!res.ok) throw new Error(data?.error || "生成失败");
         if (cancelled) return;
         setStep((prev) => (prev ? { ...prev, detail: data.detail } : null));
-      } catch (e: any) {
-        if (!cancelled) setError(e?.message ?? "生成详细说明失败");
+      } catch (e) {
+        const errorMessage = e instanceof Error ? e.message : "生成详细说明失败";
+        if (!cancelled) setError(errorMessage);
       } finally {
         if (!cancelled) setGenerating(false);
       }

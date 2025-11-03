@@ -1,9 +1,8 @@
 import ClientStepDetail from "./ClientStepDetail";
+import type { RouteParamsWithStep } from "@/types/route";
 
-export default async function StepDetailPage(
-  ctx: { params: Promise<{ id: string; stepId: string }> } | { params: { id: string; stepId: string } }
-) {
-  const resolvedParams = (await (ctx as any).params) ?? (ctx as any).params;
+export default async function StepDetailPage(ctx: RouteParamsWithStep) {
+  const resolvedParams = "then" in ctx.params ? await ctx.params : ctx.params;
   const id = resolvedParams?.id as string;
   const stepId = resolvedParams?.stepId as string;
   return <ClientStepDetail tutorialId={id} stepId={stepId} />;

@@ -32,8 +32,8 @@ export default function ClientHistoryPage() {
         if (!res.ok) throw new Error(data?.error || `加载失败（${res.status}）`);
         if (cancelled) return;
         setItems(data?.items || []);
-      } catch (e: any) {
-        if (!cancelled) setError(e?.message ?? "加载失败");
+      } catch (e) {
+        if (!cancelled) setError(e instanceof Error ? e.message : "加载失败");
       } finally {
         if (!cancelled) setLoading(false);
       }

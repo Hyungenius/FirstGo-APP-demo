@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { getServerSupabase } from "@/lib/serverSupabase";
+import type { RouteParamsWithStep } from "@/types/route";
 
-export async function PATCH(
-  req: Request,
-  ctx:
-    | { params: Promise<{ id: string; stepId: string }> }
-    | { params: { id: string; stepId: string } }
-) {
+interface RequestBody {
+  completed?: boolean;
+  timestamp?: string;
+}
+
+export async function PATCH(req: Request, ctx: RouteParamsWithStep) {
   const supabase = await getServerSupabase();
 
   const {
@@ -14,16 +15,16 @@ export async function PATCH(
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const resolvedParams = (await (ctx as any).params) ?? (ctx as any).params;
+  const resolvedParams = "then" in ctx.params ? await ctx.params : ctx.params;
   const tutorialId = resolvedParams?.id as string;
   const stepId = resolvedParams?.stepId as string;
   if (!tutorialId || !stepId) {
     return NextResponse.json({ error: "id and stepId required" }, { status: 400 });
   }
 
-  let body: any;
+  let body: { completed?: boolean; timestamp?: string };
   try {
-    body = await req.json();
+    body = (await req.json()) as { completed?: boolean; timestamp?: string };
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }

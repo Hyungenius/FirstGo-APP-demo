@@ -43,12 +43,13 @@ export default function LoginPage() {
         // 登录成功后跳转到首页
         router.push("/");
       }
-    } catch (err: any) {
-      setMessage(err?.message ?? "操作失败");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "操作失败";
+      setMessage(errorMessage);
     } finally {
       setLoading(false);
     }
-  }, [email, password, mode]);
+  }, [email, password, mode, router]);
 
   const handleSignOut = useCallback(async () => {
     const supabase = getSupabaseClient();

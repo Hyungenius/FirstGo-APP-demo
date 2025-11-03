@@ -24,7 +24,7 @@ export default function ClientTutorialPage({ tutorialId }: { tutorialId: string 
   const [error, setError] = useState<string | null>(null);
   const [openStepId, setOpenStepId] = useState<string | null>(null);
   const pendingSetRef = useRef<Set<string>>(new Set());
-  const timersRef = useRef<Record<string, any>>({});
+  const timersRef = useRef<Record<string, NodeJS.Timeout>>({});
 
   useEffect(() => {
     let cancelled = false;
@@ -37,7 +37,13 @@ export default function ClientTutorialPage({ tutorialId }: { tutorialId: string 
         if (!res.ok) throw new Error(data?.error || `加载失败（${res.status}）`);
         if (cancelled) return;
         setTitle(data?.tutorial?.title || "");
-        const ss: Step[] = (data?.steps || []).map((s: any) => ({
+        const ss: Step[] = (data?.steps || []).map((s: {
+          id: string;
+          ord: number;
+          title: string;
+          summary: string | null;
+          completed: boolean;
+        }) => ({
           id: s.id,
           ord: s.ord,
           title: s.title,
@@ -45,8 +51,8 @@ export default function ClientTutorialPage({ tutorialId }: { tutorialId: string 
           completed: !!s.completed,
         }));
         setSteps(ss);
-      } catch (e: any) {
-        if (!cancelled) setError(e?.message ?? "加载失败");
+      } catch (e) {
+        if (!cancelled) setError(e instanceof Error ? e.message : "加载失败");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -71,7 +77,10 @@ export default function ClientTutorialPage({ tutorialId }: { tutorialId: string 
           filter: `tutorial_id=eq.${tutorialId}`,
         },
         (payload) => {
-          const updatedStep = payload.new as any;
+          const updatedStep = payload.new as {
+            id: string;
+            completed: boolean;
+          };
           setSteps((prev) =>
             prev.map((s) =>
               s.id === updatedStep.id
@@ -131,7 +140,9 @@ export default function ClientTutorialPage({ tutorialId }: { tutorialId: string 
               });
               if (!res.ok) throw new Error("完成失败");
               router.push(`/tutorial/${tutorialId}/complete`);
-            } catch {}
+            } catch {
+              // 忽略错误，已显示在 UI
+            }
           }}
         >
           全部完成

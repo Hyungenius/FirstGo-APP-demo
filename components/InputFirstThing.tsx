@@ -36,8 +36,8 @@ export default function InputFirstThing({ className, onCreated, onError }: Props
       const tutorialId = String(data?.tutorialId || "");
       if (tutorialId) onCreated?.(tutorialId);
       setMessage("创建成功");
-    } catch (err: any) {
-      const msg = err?.message ?? "网络错误";
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "网络错误";
       setMessage(msg);
       onError?.(msg);
     } finally {
