@@ -1,14 +1,30 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+
+  // 检查是否已登录，如果已登录则跳转到首页
+  useEffect(() => {
+    const checkAuth = async () => {
+      const supabase = getSupabaseClient();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (session) {
+        router.push("/");
+      }
+    };
+    checkAuth();
+  }, [router]);
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,6 +40,8 @@ export default function LoginPage() {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         setMessage("登录成功");
+        // 登录成功后跳转到首页
+        router.push("/");
       }
     } catch (err: any) {
       setMessage(err?.message ?? "操作失败");
