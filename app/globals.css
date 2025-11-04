@@ -3,6 +3,11 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --pixel-bg: #f5f0e8;
+  --pixel-brown: #8b6f47;
+  --pixel-brown-dark: #6b5335;
+  --pixel-beige: #faf5ed;
+  --pixel-border: #d4c4a8;
 }
 
 @theme inline {
@@ -23,4 +28,56 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* 像素艺术字体 */
+@font-face {
+  font-family: 'PixelFont';
+  src: url('data:font/woff2;base64,') format('woff2');
+  font-display: swap;
+}
+
+.pixel-font {
+  font-family: 'Courier New', 'Monaco', monospace;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  font-weight: normal;
+  letter-spacing: 0;
+}
+
+/* 像素艺术边框 */
+.pixel-border {
+  border: 3px solid var(--pixel-brown);
+  border-image-slice: 1;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+.pixel-border-thick {
+  border: 4px solid var(--pixel-brown);
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+.pixel-border-dashed {
+  border: 2px dashed var(--pixel-brown);
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+/* 简约风格 */
+.minimal-border {
+  border: 1px solid #e5e5e5;
+}
+
+.minimal-bg {
+  background: #ffffff;
+}
+
+.minimal-text {
+  color: #000000;
 }

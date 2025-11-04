@@ -45,7 +45,7 @@ export default function ModalDetail({ isOpen, onClose, title, children }: Props)
     >
       <div
         ref={modalRef}
-        className="relative w-full max-w-2xl rounded-lg border border-zinc-200 bg-white p-6 shadow-lg dark:border-zinc-800 dark:bg-black"
+        className="relative w-full max-w-2xl rounded border border-gray-200 bg-white p-6 shadow-lg"
         onClick={(e) => e.stopPropagation()}
         style={{
           animation: "slideUp 0.2s ease-out",
@@ -53,7 +53,7 @@ export default function ModalDetail({ isOpen, onClose, title, children }: Props)
       >
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 rounded p-1 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-900 dark:hover:text-zinc-100"
+          className="absolute right-4 top-4 rounded p-1 text-gray-500 transition-colors hover:bg-gray-100 hover:text-black"
           aria-label="关闭"
         >
           <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -61,7 +61,7 @@ export default function ModalDetail({ isOpen, onClose, title, children }: Props)
           </svg>
         </button>
         {title && (
-          <h2 className="mb-4 pr-8 text-xl font-semibold text-zinc-900 dark:text-zinc-100">{title}</h2>
+          <h2 className="mb-4 pr-8 text-xl font-medium text-black">{title}</h2>
         )}
         <div className="max-h-[70vh] overflow-y-auto">{children}</div>
       </div>

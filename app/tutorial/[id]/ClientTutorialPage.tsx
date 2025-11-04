@@ -103,6 +103,15 @@ export default function ClientTutorialPage({ tutorialId }: { tutorialId: string 
   const completed = steps.filter((s) => s.completed).length;
   const allDone = steps.length > 0 && completed === steps.length;
 
+  const [preparationExpanded, setPreparationExpanded] = useState(true);
+  const [activeStepId, setActiveStepId] = useState<string | null>(null);
+
+  // 找到第一个未完成的步骤作为活动步骤
+  useEffect(() => {
+    const firstIncomplete = steps.find(s => !s.completed);
+    setActiveStepId(firstIncomplete?.id || steps[steps.length - 1]?.id || null);
+  }, [steps]);
+
   function isPending(stepId: string) {
     return pendingSetRef.current.has(stepId);
   }
@@ -118,19 +127,107 @@ export default function ClientTutorialPage({ tutorialId }: { tutorialId: string 
   }
 
   if (loading) {
-    return <div className="p-6 text-zinc-600 dark:text-zinc-400">加载中...</div>;
+    return <div className="p-6 text-gray-600">加载中...</div>;
   }
   if (error) {
     return <div className="p-6 text-red-600">{error}</div>;
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl p-6">
-      <h1 className="mb-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-100">{title || "教程"}</h1>
-      <TutorialProgress total={steps.length} completed={completed} />
-      <div className="mt-4">
+    <div className="relative mx-auto w-full max-w-3xl bg-white p-6" style={{ minHeight: '100vh' }}>
+      {/* 左侧边栏 */}
+      <div 
+        className="absolute left-0 top-0 bottom-0 w-16 opacity-30"
+        style={{ backgroundColor: '#f5f0e8' }}
+      >
+        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 text-2xl">✦</div>
+      </div>
+
+      {/* 主要内容 */}
+      <div className="relative z-10 ml-20">
+        {/* 标题 */}
+        <div className="mb-6 rounded border border-gray-200 bg-white p-4 text-center">
+          <h1 className="text-xl font-medium text-black">
+            {title ? `第一次做${title}` : "第一次做xxxx"}
+          </h1>
+        </div>
+
+        {/* 准备部分 */}
+        <div className="mb-6 rounded border border-gray-200 bg-white p-4">
+          <div className="flex">
+            <div className="w-20">
+              <div className="text-sm text-black">图标</div>
+              <div className="mt-2 h-16 w-16 border border-gray-200"></div>
+            </div>
+            <div className="flex-1 pl-4">
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-base font-medium text-black">嘿!记得先准备:</h2>
+                <button
+                  onClick={() => setPreparationExpanded(!preparationExpanded)}
+                  className="rounded border border-gray-200 px-2 py-1 text-xs text-black"
+                >
+                  收缩
+                </button>
+              </div>
+              {preparationExpanded && (
+                <div className="space-y-1 text-sm text-black">
+                  <div>1.xxxx</div>
+                  <div>2.xxxx</div>
+                  <div>3.xxxx</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* 步骤列表 */}
+        <div className="mb-6 space-y-3">
+          {steps.map((s) => (
+            <div key={s.id} className="space-y-2">
+              <div
+                className={`rounded border border-gray-200 bg-white p-4 text-center ${
+                  activeStepId === s.id ? 'border-gray-400' : ''
+                }`}
+                onClick={() => {
+                  setOpenStepId(s.id);
+                  setActiveStepId(s.id);
+                }}
+                style={{ cursor: 'pointer' }}
+              >
+                <div className="mb-2 text-base font-medium text-black">
+                  第{s.ord === 1 ? '一' : s.ord === 2 ? '二' : s.ord === 3 ? '三' : s.ord === 4 ? '四' : s.ord === 5 ? '五' : s.ord === 6 ? '六' : s.ord}步
+                </div>
+                <div className="mb-1 text-base text-black">{s.title}</div>
+                {s.summary && (
+                  <div className="text-sm text-black">{s.summary}</div>
+                )}
+                {activeStepId === s.id && (
+                  <div className="mt-2 flex justify-center">
+                    <span className="text-gray-400">▶</span>
+                  </div>
+                )}
+                {s.completed && (
+                  <div className="mt-2 text-xs text-gray-500">已完成</div>
+                )}
+              </div>
+              {isPending(s.id) && (
+                <div className="flex items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700">
+                  已标记完成。2 秒内可撤销。
+                  <button
+                    className="rounded border border-gray-300 px-2 py-1 text-xs hover:bg-gray-100"
+                    onClick={() => undoStep(s.id)}
+                  >
+                    撤销
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* 完成按钮 */}
         <button
-          className="rounded-md bg-zinc-900 px-4 py-2 text-white transition-colors hover:bg-black disabled:opacity-50 dark:bg-zinc-200 dark:text-black dark:hover:bg-white"
+          className="w-full rounded border border-gray-200 bg-white px-4 py-3 text-base font-medium text-black transition-colors hover:bg-gray-50 disabled:opacity-50"
           disabled={!allDone}
           onClick={async () => {
             try {
@@ -145,57 +242,10 @@ export default function ClientTutorialPage({ tutorialId }: { tutorialId: string 
             }
           }}
         >
-          全部完成
+          已全部完成
         </button>
       </div>
-      <div className="mt-6 grid grid-cols-1 gap-4">
-        {steps.map((s) => (
-          <div key={s.id} className="space-y-2">
-            <SwipeableStep
-              ord={s.ord}
-              title={s.title}
-              summary={s.summary || undefined}
-              completed={s.completed}
-              onDetailClick={() => setOpenStepId(s.id)}
-              onComplete={() => {
-                if (s.completed) return;
-                // 乐观完成并提供 2s 撤销窗口
-                setSteps((prev) => prev.map((p) => (p.id === s.id ? { ...p, completed: true } : p)));
-                pendingSetRef.current.add(s.id);
 
-                timersRef.current[s.id] = setTimeout(async () => {
-                  try {
-                    const res = await fetch(`/api/tutorials/${tutorialId}/steps/${s.id}/complete`, {
-                      method: "PATCH",
-                      headers: { "Content-Type": "application/json" },
-                      credentials: "include",
-                      body: JSON.stringify({ completed: true }),
-                    });
-                    if (!res.ok) throw new Error("更新失败");
-                  } catch (e) {
-                    // 回滚
-                    setSteps((prev) => prev.map((p) => (p.id === s.id ? { ...p, completed: false } : p)));
-                  } finally {
-                    pendingSetRef.current.delete(s.id);
-                    delete timersRef.current[s.id];
-                  }
-                }, 2000);
-              }}
-            />
-            {isPending(s.id) && (
-              <div className="flex items-center justify-between rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 shadow-sm dark:border-zinc-800 dark:bg-black dark:text-zinc-300">
-                已标记完成。2 秒内可撤销。
-                <button
-                  className="rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900"
-                  onClick={() => undoStep(s.id)}
-                >
-                  撤销
-                </button>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
       {openStepId && (
         <ModalDetail isOpen={!!openStepId} onClose={() => setOpenStepId(null)}>
           <StepDetailContent tutorialId={tutorialId} stepId={openStepId} />

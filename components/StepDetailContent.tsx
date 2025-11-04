@@ -82,7 +82,7 @@ export default function StepDetailContent({ tutorialId, stepId }: StepDetailCont
   }, [step, tutorialId, stepId, loading, generating]);
 
   if (loading) {
-    return <div className="p-4 text-zinc-600 dark:text-zinc-400">加载中...</div>;
+    return <div className="p-4 text-gray-600">加载中...</div>;
   }
   if (error || !step) {
     return <div className="p-4 text-red-600">{error || "步骤不存在"}</div>;
@@ -90,22 +90,22 @@ export default function StepDetailContent({ tutorialId, stepId }: StepDetailCont
 
   return (
     <div>
-      <div className="mb-2 text-sm text-zinc-500 dark:text-zinc-400">步骤 {step.ord}</div>
-      <h3 className="mb-3 text-xl font-semibold text-zinc-900 dark:text-zinc-100">{step.title}</h3>
+      <div className="mb-2 text-sm text-gray-500">步骤 {step.ord}</div>
+      <h3 className="mb-3 text-xl font-medium text-black">{step.title}</h3>
       {step.summary && (
-        <p className="mb-4 text-zinc-700 dark:text-zinc-300">{step.summary}</p>
+        <p className="mb-4 text-gray-700">{step.summary}</p>
       )}
       {generating ? (
-        <div className="mt-4 flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
+        <div className="mt-4 flex items-center gap-2 text-sm text-gray-500">
           <LoadingSpinner size="sm" />
           正在生成详细说明...
         </div>
       ) : step.detail ? (
-        <div className="mt-4 space-y-2 text-zinc-800 dark:text-zinc-200">
+        <div className="mt-4 space-y-2 text-gray-800">
           <div className="whitespace-pre-line text-sm leading-relaxed">{step.detail}</div>
         </div>
       ) : (
-        <div className="mt-4 text-sm text-zinc-500 dark:text-zinc-400">详细说明待生成</div>
+        <div className="mt-4 text-sm text-gray-500">详细说明待生成</div>
       )}
     </div>
   );
