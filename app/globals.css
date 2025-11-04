@@ -46,6 +46,12 @@ body {
   letter-spacing: 0;
 }
 
+.pixel-image {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
 /* 像素艺术边框 */
 .pixel-border {
   border: 3px solid var(--pixel-brown);

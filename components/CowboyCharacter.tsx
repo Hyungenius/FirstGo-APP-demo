@@ -11,11 +11,8 @@ export default function CowboyCharacter() {
         <img 
           src="/assets/cowboy.png" 
           alt="牛仔角色" 
-          className="pixel-font"
+          className="pixel-font pixel-image"
           style={{ 
-            imageRendering: 'pixelated',
-            imageRendering: '-moz-crisp-edges',
-            imageRendering: 'crisp-edges',
             width: '64px',
             height: '64px',
             objectFit: 'contain',
