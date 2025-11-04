@@ -2,6 +2,7 @@ import Link from "next/link";
 import DebugSupabase from "@/components/DebugSupabase";
 import HomeCreateStarter from "@/components/HomeCreateStarter";
 import AuthGuard from "@/components/AuthGuard";
+import CowboyCharacter from "@/components/CowboyCharacter";
 
 export default function Home() {
   return (
@@ -11,8 +12,12 @@ export default function Home() {
         <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 py-2 text-sm" style={{ color: '#4a4a4a' }}>
           <span className="pixel-font">12:00</span>
           <div className="flex items-center gap-2">
-            <span className="pixel-font">🏆</span>
-            <span className="pixel-font">🕐</span>
+            <Link href="/badges" className="pixel-font cursor-pointer transition-opacity hover:opacity-70">
+              🏆
+            </Link>
+            <Link href="/history" className="pixel-font cursor-pointer transition-opacity hover:opacity-70">
+              🕐
+            </Link>
           </div>
         </div>
 
@@ -33,16 +38,27 @@ export default function Home() {
                 <div>嘿! 没想好做什么?</div>
                 <div>不如试试......</div>
               </div>
-              {/* 角色（简化版像素风格） */}
-              <div className="relative">
-                <div className="pixel-font text-6xl">🤠</div>
-              </div>
+              {/* 角色（使用图片或emoji） */}
+              <CowboyCharacter />
             </div>
           </div>
 
-          {/* 右侧木块堆叠 */}
-          <div className="absolute right-4 top-40 z-0 hidden md:block">
-            <div className="flex flex-col items-end gap-1">
+          {/* 标题 */}
+          <h1 
+            className="pixel-font text-4xl font-semibold mb-4"
+            style={{ color: '#4a4a4a' }}
+          >
+            第一次
+          </h1>
+
+          {/* 活动文字区域 */}
+          <div className="pixel-font text-center mb-2" style={{ color: '#8b6f47' }}>
+            <div className="text-sm">🎉 开始你的第一次冒险！</div>
+          </div>
+
+          {/* 木块堆叠区域（在输入框上方） */}
+          <div className="relative w-full max-w-xl mb-4 flex justify-center">
+            <div className="flex flex-col items-center gap-1">
               {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                 <div
                   key={i}
@@ -58,14 +74,6 @@ export default function Home() {
               ))}
             </div>
           </div>
-
-          {/* 标题 */}
-          <h1 
-            className="pixel-font text-4xl font-semibold mb-4"
-            style={{ color: '#4a4a4a' }}
-          >
-            第一次
-          </h1>
 
           {/* 输入区域 */}
           <div 
