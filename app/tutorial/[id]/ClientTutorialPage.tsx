@@ -185,33 +185,51 @@ export default function ClientTutorialPage({ tutorialId }: { tutorialId: string 
           {steps.map((s) => (
             <div key={s.id} className="space-y-2">
               <div
-                className={`rounded border border-gray-200 bg-white p-4 text-center ${
-                  activeStepId === s.id ? 'border-gray-400' : ''
-                }`}
-                onClick={() => {
-                  setOpenStepId(s.id);
-                  setActiveStepId(s.id);
-                }}
-                style={{ cursor: 'pointer' }}
+                className={activeStepId === s.id ? 'border-gray-400' : ''}
+                style={{ border: activeStepId === s.id ? '1px solid #9ca3af' : 'none', borderRadius: '4px', padding: '2px' }}
               >
-                <div className="mb-2 text-base font-medium text-black">
-                  第{s.ord === 1 ? '一' : s.ord === 2 ? '二' : s.ord === 3 ? '三' : s.ord === 4 ? '四' : s.ord === 5 ? '五' : s.ord === 6 ? '六' : s.ord}步
-                </div>
-                <div className="mb-1 text-base text-black">{s.title}</div>
-                {s.summary && (
-                  <div className="text-sm text-black">{s.summary}</div>
-                )}
+                <SwipeableStep
+                  ord={s.ord}
+                  title={s.title}
+                  summary={s.summary || undefined}
+                  completed={s.completed}
+                  onDetailClick={() => {
+                    setOpenStepId(s.id);
+                    setActiveStepId(s.id);
+                  }}
+                  onComplete={() => {
+                    if (s.completed) return;
+                    // 乐观完成并提供 2s 撤销窗口
+                    setSteps((prev) => prev.map((p) => (p.id === s.id ? { ...p, completed: true } : p)));
+                    pendingSetRef.current.add(s.id);
+
+                    timersRef.current[s.id] = setTimeout(async () => {
+                      try {
+                        const res = await fetch(`/api/tutorials/${tutorialId}/steps/${s.id}/complete`, {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          credentials: "include",
+                          body: JSON.stringify({ completed: true }),
+                        });
+                        if (!res.ok) throw new Error("更新失败");
+                      } catch (e) {
+                        // 回滚
+                        setSteps((prev) => prev.map((p) => (p.id === s.id ? { ...p, completed: false } : p)));
+                      } finally {
+                        pendingSetRef.current.delete(s.id);
+                        delete timersRef.current[s.id];
+                      }
+                    }, 2000);
+                  }}
+                />
                 {activeStepId === s.id && (
                   <div className="mt-2 flex justify-center">
                     <span className="text-gray-400">▶</span>
                   </div>
                 )}
-                {s.completed && (
-                  <div className="mt-2 text-xs text-gray-500">已完成</div>
-                )}
               </div>
               {isPending(s.id) && (
-                <div className="flex items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700">
+                <div className="flex items-center justify-between rounded border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700">
                   已标记完成。2 秒内可撤销。
                   <button
                     className="rounded border border-gray-300 px-2 py-1 text-xs hover:bg-gray-100"
