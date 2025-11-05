@@ -2,11 +2,6 @@ import { NextResponse } from "next/server";
 import { getServerSupabase } from "@/lib/serverSupabase";
 import type { RouteParamsWithStep } from "@/types/route";
 
-interface RequestBody {
-  completed?: boolean;
-  timestamp?: string;
-}
-
 export async function PATCH(req: Request, ctx: RouteParamsWithStep) {
   const supabase = await getServerSupabase();
 

@@ -85,7 +85,7 @@ export async function POST(_req: Request, ctx: RouteParamsWithStep) {
     }
 
     // 获取纯文本内容，清理可能的 Markdown 代码块标记
-    let detailText = content.trim()
+    const detailText = content.trim()
       .replace(/^```json\s*/i, "")
       .replace(/^```\s*/i, "")
       .replace(/^```markdown\s*/i, "")

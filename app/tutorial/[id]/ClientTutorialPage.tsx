@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import TutorialProgress from "@/components/TutorialProgress";
 import SwipeableStep from "@/components/SwipeableStep";
 import ModalDetail from "@/components/ModalDetail";
 import StepDetailContent from "@/components/StepDetailContent";
@@ -240,7 +239,7 @@ export default function ClientTutorialPage({ tutorialId }: { tutorialId: string 
                           body: JSON.stringify({ completed: true }),
                         });
                         if (!res.ok) throw new Error("更新失败");
-                      } catch (e) {
+                      } catch {
                         // 回滚
                         setSteps((prev) => prev.map((p) => (p.id === s.id ? { ...p, completed: false } : p)));
                       } finally {
