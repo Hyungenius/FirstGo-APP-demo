@@ -1,6 +1,21 @@
 import { buildTutorialPrompt, parseAIOutput, callAI } from "@/lib/ai";
+import OpenAI from "openai";
+
+// Mock OpenAI
+jest.mock("openai");
 
 describe("lib/ai", () => {
+  // 设置测试环境变量
+  const originalEnv = process.env;
+
+  beforeAll(() => {
+    process.env.SILICONFLOW_API_KEY = "test-api-key";
+  });
+
+  afterAll(() => {
+    process.env = originalEnv;
+  });
+
   describe("buildTutorialPrompt", () => {
     it("应该生成包含用户输入的 prompt", () => {
       const prompt = buildTutorialPrompt("第一次去健身房");
@@ -53,12 +68,66 @@ describe("lib/ai", () => {
   });
 
   describe("callAI", () => {
-    it("应该返回固定结构（mock）", async () => {
+    it("应该调用 OpenAI API 并返回解析后的 JSON", async () => {
+      const mockResponse = {
+        title: "测试教程",
+        description: "测试描述",
+        items: ["物品1", "物品2"],
+        steps: [
+          { title: "步骤1", summary: "摘要1" },
+          { title: "步骤2", summary: "摘要2" },
+          { title: "步骤3", summary: "摘要3" },
+          { title: "步骤4", summary: "摘要4" },
+          { title: "步骤5", summary: "摘要5" },
+          { title: "步骤6", summary: "摘要6" },
+        ],
+        tags: ["标签1", "标签2", "标签3"],
+        difficulty: 3,
+      };
+
+      const mockCreate = jest.fn().mockResolvedValue({
+        choices: [
+          {
+            message: {
+              content: JSON.stringify(mockResponse),
+            },
+          },
+        ],
+      });
+
+      (OpenAI as jest.MockedClass<typeof OpenAI>).mockImplementation(() => ({
+        chat: {
+          completions: {
+            create: mockCreate,
+          },
+        },
+      } as unknown as OpenAI));
+
       const result = await callAI("测试 prompt");
+
+      expect(mockCreate).toHaveBeenCalledWith({
+        model: "deepseek-chat",
+        messages: [
+          {
+            role: "user",
+            content: "测试 prompt",
+          },
+        ],
+        temperature: 0.7,
+      });
+
       expect(result).toHaveProperty("title");
       expect(result).toHaveProperty("steps");
       expect(result).toHaveProperty("items");
-      expect(result.steps.length).toBeGreaterThanOrEqual(6);
+    });
+
+    it("应该在没有 API key 时抛出错误", async () => {
+      const originalApiKey = process.env.SILICONFLOW_API_KEY;
+      delete process.env.SILICONFLOW_API_KEY;
+
+      await expect(callAI("测试 prompt")).rejects.toThrow("SILICONFLOW_API_KEY 环境变量未设置");
+
+      process.env.SILICONFLOW_API_KEY = originalApiKey;
     });
   });
 });
