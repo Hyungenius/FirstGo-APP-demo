@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import ReactMarkdown from "react-markdown";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
 interface StepDetailContentProps {
@@ -61,7 +62,8 @@ export default function StepDetailContent({ tutorialId, stepId }: StepDetailCont
     (async () => {
       setGenerating(true);
       try {
-        const res = await fetch(`/api/tutorials/${tutorialId}/steps/${stepId}/detail`, {
+        const res = await fetch(`/api/tutorials/${tutorialId}/steps/${stepId}/generate-detail`, {
+          method: "POST",
           credentials: "include",
           cache: "no-store",
         });
@@ -101,8 +103,23 @@ export default function StepDetailContent({ tutorialId, stepId }: StepDetailCont
           正在生成详细说明...
         </div>
       ) : step.detail ? (
-        <div className="mt-4 space-y-2 text-gray-800">
-          <div className="whitespace-pre-line text-sm leading-relaxed">{step.detail}</div>
+        <div className="mt-4 space-y-2 text-gray-800 prose prose-sm max-w-none">
+          <ReactMarkdown
+            components={{
+              h1: ({ children }: any) => <h1 className="text-xl font-semibold mb-3 mt-4 text-black">{children}</h1>,
+              h2: ({ children }: any) => <h2 className="text-lg font-semibold mb-2 mt-3 text-black">{children}</h2>,
+              h3: ({ children }: any) => <h3 className="text-base font-semibold mb-2 mt-2 text-black">{children}</h3>,
+              p: ({ children }: any) => <p className="mb-3 text-gray-800">{children}</p>,
+              strong: ({ children }: any) => <strong className="font-semibold text-black">{children}</strong>,
+              em: ({ children }: any) => <em className="italic">{children}</em>,
+              ul: ({ children }: any) => <ul className="list-disc list-inside mb-3 space-y-1 ml-4">{children}</ul>,
+              ol: ({ children }: any) => <ol className="list-decimal list-inside mb-3 space-y-1 ml-4">{children}</ol>,
+              li: ({ children }: any) => <li className="text-gray-800">{children}</li>,
+              code: ({ children }: any) => <code className="bg-gray-100 px-1.5 py-0.5 rounded text-sm font-mono">{children}</code>,
+            } as any}
+          >
+            {step.detail}
+          </ReactMarkdown>
         </div>
       ) : (
         <div className="mt-4 text-sm text-gray-500">详细说明待生成</div>

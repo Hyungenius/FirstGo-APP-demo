@@ -16,10 +16,18 @@ interface Step {
   completed?: boolean;
 }
 
+interface Item {
+  id: string;
+  name: string;
+  qty?: string | null;
+  note?: string | null;
+}
+
 export default function ClientTutorialPage({ tutorialId }: { tutorialId: string }) {
   const router = useRouter();
   const [title, setTitle] = useState<string>("");
   const [steps, setSteps] = useState<Step[]>([]);
+  const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [openStepId, setOpenStepId] = useState<string | null>(null);
@@ -51,6 +59,18 @@ export default function ClientTutorialPage({ tutorialId }: { tutorialId: string 
           completed: !!s.completed,
         }));
         setSteps(ss);
+        const itemsData: Item[] = (data?.items || []).map((i: {
+          id: string;
+          name: string;
+          qty: string | null;
+          note: string | null;
+        }) => ({
+          id: i.id,
+          name: i.name,
+          qty: i.qty,
+          note: i.note,
+        }));
+        setItems(itemsData);
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : "加载失败");
       } finally {
@@ -148,37 +168,45 @@ export default function ClientTutorialPage({ tutorialId }: { tutorialId: string 
         {/* 标题 */}
         <div className="mb-6 rounded border border-gray-200 bg-white p-4 text-center">
           <h1 className="text-xl font-medium text-black">
-            {title ? `第一次做${title}` : "第一次做xxxx"}
+            {title || "教程"}
           </h1>
         </div>
 
         {/* 准备部分 */}
-        <div className="mb-6 rounded border border-gray-200 bg-white p-4">
-          <div className="flex">
-            <div className="w-20">
-              <div className="text-sm text-black">图标</div>
-              <div className="mt-2 h-16 w-16 border border-gray-200"></div>
-            </div>
-            <div className="flex-1 pl-4">
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-base font-medium text-black">嘿!记得先准备:</h2>
-                <button
-                  onClick={() => setPreparationExpanded(!preparationExpanded)}
-                  className="rounded border border-gray-200 px-2 py-1 text-xs text-black"
-                >
-                  收缩
-                </button>
+        {items.length > 0 && (
+          <div className="mb-6 rounded border border-gray-200 bg-white p-4">
+            <div className="flex">
+              <div className="w-20 flex items-center justify-center">
+                <span className="text-4xl">📦</span>
               </div>
-              {preparationExpanded && (
-                <div className="space-y-1 text-sm text-black">
-                  <div>1.xxxx</div>
-                  <div>2.xxxx</div>
-                  <div>3.xxxx</div>
+              <div className="flex-1 pl-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <h2 className="text-base font-medium text-black flex items-center gap-2">
+                    <span>📦</span>
+                    准备物品
+                  </h2>
+                  <button
+                    onClick={() => setPreparationExpanded(!preparationExpanded)}
+                    className="rounded border border-gray-200 px-2 py-1 text-xs text-black"
+                  >
+                    {preparationExpanded ? "收缩" : "展开"}
+                  </button>
                 </div>
-              )}
+                {preparationExpanded && (
+                  <div className="space-y-1 text-sm text-black">
+                    {items.map((item, idx) => (
+                      <div key={item.id}>
+                        {idx + 1}. {item.name}
+                        {item.qty && ` (${item.qty})`}
+                        {item.note && ` - ${item.note}`}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* 步骤列表 */}
         <div className="mb-6 space-y-3">

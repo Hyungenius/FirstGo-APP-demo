@@ -11,9 +11,10 @@ export async function GET(_req: Request, ctx: RouteParamsWithStep) {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const resolvedParams = "then" in ctx.params ? await ctx.params : ctx.params;
-  const tutorialId = resolvedParams?.id as string;
-  const stepId = resolvedParams?.stepId as string;
+  // 正确处理 Next.js 15+ 的 params Promise
+  const params = await (ctx.params instanceof Promise ? ctx.params : Promise.resolve(ctx.params));
+  const tutorialId = params?.id as string;
+  const stepId = params?.stepId as string;
   if (!tutorialId || !stepId) {
     return NextResponse.json({ error: "id and stepId required" }, { status: 400 });
   }
@@ -45,7 +46,8 @@ export async function GET(_req: Request, ctx: RouteParamsWithStep) {
     const aiResp = await callAI(prompt);
     // mock 返回的是一个教程结构，这里我们用一个简单的占位文本
     // 实际实现中，AI 应该返回纯文本的 detail
-    const detailText = `这是步骤“${step.title}”的详细说明。\n\n${aiResp.description || ""}\n\n提示：${step.detail_prompt}`;
+    const aiRespObj = aiResp as Record<string, unknown>;
+    const detailText = `这是步骤"${step.title}"的详细说明。\n\n${String(aiRespObj.description || "")}\n\n提示：${step.detail_prompt}`;
 
     // 保存到数据库
     const { error: updateErr } = await supabase

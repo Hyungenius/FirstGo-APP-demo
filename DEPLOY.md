@@ -8,8 +8,14 @@
 
 2. **环境变量配置**
    在 Vercel 项目设置中添加以下环境变量：
+   
+   **Supabase 配置：**
    - `NEXT_PUBLIC_SUPABASE_URL`: 你的 Supabase 项目 URL
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: 你的 Supabase anon/public key
+   
+   **AI API 配置（硅基流动）：**
+   - `SILICONFLOW_API_KEY`: 你的硅基流动 API 密钥
+   - `SILICONFLOW_MODEL`: （可选）模型名称，默认为 "deepseek-chat"
 
 3. **部署步骤**
    - Vercel 会自动检测 Next.js 项目

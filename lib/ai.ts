@@ -1,3 +1,5 @@
+import OpenAI from "openai";
+
 export interface AiItem {
   name: string;
   qty?: string;
@@ -54,17 +56,24 @@ export function parseAIOutput(resp: unknown): AiTutorialStructured {
 
   const itemsSrc: unknown[] = Array.isArray(r.items) ? r.items : [];
   const items: AiItem[] = itemsSrc
-    .filter((it) => it && typeof it === "object")
     .map((it) => {
-      const item = it as Record<string, unknown>;
-      return {
-        name: String(item.name ?? "").trim(),
-        qty: typeof item.qty === "string" ? item.qty : undefined,
-        note: typeof item.note === "string" ? item.note : undefined,
-      };
+      // 支持字符串数组格式（新格式）
+      if (typeof it === "string") {
+        return { name: it.trim() };
+      }
+      // 支持对象格式（向后兼容）
+      if (it && typeof it === "object") {
+        const item = it as Record<string, unknown>;
+        return {
+          name: String(item.name ?? "").trim(),
+          qty: typeof item.qty === "string" ? item.qty : undefined,
+          note: typeof item.note === "string" ? item.note : undefined,
+        };
+      }
+      return null;
     })
-    .filter((it) => it.name.length > 0)
-    .slice(0, 12);
+    .filter((it): it is AiItem => it !== null && it.name.length > 0)
+    .slice(0, 12) as AiItem[];
 
   const stepsSrc: unknown[] = Array.isArray(r.steps) ? r.steps : [];
   const steps: AiStep[] = stepsSrc
@@ -90,40 +99,123 @@ export function parseAIOutput(resp: unknown): AiTutorialStructured {
   const tags: string[] | undefined = Array.isArray(r.tags)
     ? r.tags.map((t) => String(t)).filter(Boolean).slice(0, 8)
     : undefined;
-  const difficulty = typeof r.difficulty === "string" ? r.difficulty : undefined;
+  // 支持数字格式（1-5）或字符串格式（向后兼容）
+  const difficulty = typeof r.difficulty === "number" 
+    ? String(r.difficulty) 
+    : typeof r.difficulty === "string" 
+    ? r.difficulty 
+    : undefined;
 
   return { title, description, items, steps: normalizedSteps, tags, difficulty };
 }
 
 /**
- * 仅用于开发阶段的伪实现：返回固定教程结构
- * 注意：真实实现只应在 Server 环境调用第三方 AI
+ * 调用 AI API 生成教程内容
+ * 注意：此函数只应在 Server 环境调用
+ * 
+ * 当前使用：硅基流动（SiliconFlow）
+ * 如需切换回 DeepSeek，请取消注释下方的 DeepSeek 代码，并注释掉硅基流动的代码
  */
-export async function callAI(_prompt: string): Promise<AiTutorialStructured> {
-  // 模拟网络耗时
-  await new Promise((r) => setTimeout(r, 200));
+export async function callAI(prompt: string): Promise<unknown> {
+  // ========== 硅基流动（SiliconFlow）- 当前使用 ==========
+  const apiKey = process.env.SILICONFLOW_API_KEY;
+  if (!apiKey) {
+    throw new Error("SILICONFLOW_API_KEY 环境变量未设置");
+  }
 
-  return {
-    title: "第一次去健身房：入门 7 步",
-    description: "为完全新手准备的健身房第一次指南，覆盖装备、热身到收尾。",
-    items: [
-      { name: "运动服" },
-      { name: "运动鞋" },
-      { name: "水瓶", qty: "1" },
-      { name: "毛巾", qty: "1" }
-    ],
-    steps: [
-      { title: "办理入场与储物", summary: "前台登记，了解器械区域，放好随身物。", detail_prompt: "扩写储物与馆内导览注意事项" },
-      { title: "全身动态热身", summary: "5–8 分钟，唤醒关节与心肺。", detail_prompt: "提供逐步热身动作与次数" },
-      { title: "器械熟悉与空杆练习", summary: "掌握动作轨迹与呼吸节奏。", detail_prompt: "列出 3 个基础器械与起始重量建议" },
-      { title: "下肢基础动作", summary: "腿举或深蹲机，2×12。", detail_prompt: "给出姿势要点与常见错误" },
-      { title: "上肢推拉动作", summary: "胸推与划船，各 2×12。", detail_prompt: "说明握距与肩胛控制" },
-      { title: "核心训练", summary: "平板支撑 3×20–30 秒。", detail_prompt: "如何呼吸与骨盆中立" },
-      { title: "拉伸与放松", summary: "全身拉伸 5 分钟，记录体感。", detail_prompt: "提供 4 个拉伸动作与时间" }
-    ],
-    tags: ["健身", "新手", "第一次"],
-    difficulty: "easy"
-  };
+  const client = new OpenAI({
+    apiKey,
+    baseURL: "https://api.siliconflow.cn/v1",
+  });
+
+  try {
+    const completion = await client.chat.completions.create({
+      model: process.env.SILICONFLOW_MODEL || "deepseek-chat", // 可通过环境变量配置模型，默认使用 deepseek-chat
+      messages: [
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      temperature: 0.7,
+    });
+
+    const content = completion.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error("AI 返回内容为空");
+    }
+
+    // 尝试解析 JSON 响应
+    // 移除可能的 markdown 代码块标记
+    const cleanedContent = content.trim().replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "").trim();
+    
+    try {
+      return JSON.parse(cleanedContent);
+    } catch (parseError) {
+      throw new Error(`AI 返回的 JSON 解析失败: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(`调用硅基流动 API 失败: ${error.message}`);
+    }
+    throw new Error("调用硅基流动 API 失败: 未知错误");
+  }
 }
+
+// ========== DeepSeek 实现（已保留，需要时可替换上面的硅基流动代码）==========
+// 如需切换回 DeepSeek，请将上面的 callAI 函数替换为以下代码：
+/*
+export async function callAI(prompt: string): Promise<unknown> {
+  const apiKey = process.env.DEEPSEEK_API_KEY;
+  if (!apiKey) {
+    throw new Error("DEEPSEEK_API_KEY 环境变量未设置");
+  }
+
+  const client = new OpenAI({
+    apiKey,
+    baseURL: "https://api.deepseek.com/v1",
+  });
+
+  try {
+    const completion = await client.chat.completions.create({
+      model: "deepseek-chat",
+      messages: [
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      temperature: 0.7,
+    });
+
+    const content = completion.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error("AI 返回内容为空");
+    }
+
+    // 尝试解析 JSON 响应
+    // 移除可能的 markdown 代码块标记
+    const backtickPattern = new RegExp("^```json\\s*", "i");
+    const backtickPattern2 = new RegExp("^```\\s*", "i");
+    const backtickPattern3 = new RegExp("\\s*```$", "i");
+    const cleanedContent = content.trim()
+      .replace(backtickPattern, "")
+      .replace(backtickPattern2, "")
+      .replace(backtickPattern3, "")
+      .trim();
+    
+    try {
+      return JSON.parse(cleanedContent);
+    } catch (parseError) {
+      throw new Error(`AI 返回的 JSON 解析失败: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(`调用 DeepSeek API 失败: ${error.message}`);
+    }
+    throw new Error("调用 DeepSeek API 失败: 未知错误");
+  }
+}
+*/
 
 
