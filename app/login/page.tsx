@@ -58,15 +58,23 @@ export default function LoginPage() {
   }, []);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-6 py-16 dark:bg-black">
-      <div className="w-full max-w-md rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-black">
-        <h1 className="mb-4 text-2xl font-semibold text-black dark:text-zinc-50">{mode === "signup" ? "注册" : "登录"}</h1>
+    <div className="flex min-h-screen items-center justify-center px-6 py-16 pixel-font" style={{ backgroundColor: '#f5f0e8' }}>
+      <div className="w-full max-w-md pixel-wooden-container p-6">
+        <h1 className="pixel-font mb-4 text-2xl font-semibold" style={{ color: '#6b5335' }}>{mode === "signup" ? "注册" : "登录"}</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="email"
             required
             placeholder="邮箱"
-            className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-black placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-800 dark:border-zinc-700 dark:bg-black dark:text-zinc-50 dark:focus:ring-zinc-200"
+            className="pixel-font w-full px-3 py-2"
+            style={{ 
+              border: '3px solid #8b6f47',
+              borderRadius: '6px',
+              backgroundColor: '#faf5ed',
+              color: '#6b5335',
+              imageRendering: 'pixelated',
+              boxShadow: 'inset 0 0 0 1px rgba(107, 83, 53, 0.2), 0 2px 4px rgba(0, 0, 0, 0.1)'
+            }}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
@@ -74,26 +82,34 @@ export default function LoginPage() {
             type="password"
             required
             placeholder="密码（至少 6 位）"
-            className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-black placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-800 dark:border-zinc-700 dark:bg-black dark:text-zinc-50 dark:focus:ring-zinc-200"
+            className="pixel-font w-full px-3 py-2"
+            style={{ 
+              border: '3px solid #8b6f47',
+              borderRadius: '6px',
+              backgroundColor: '#faf5ed',
+              color: '#6b5335',
+              imageRendering: 'pixelated',
+              boxShadow: 'inset 0 0 0 1px rgba(107, 83, 53, 0.2), 0 2px 4px rgba(0, 0, 0, 0.1)'
+            }}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
           <button
             type="submit"
-            className="w-full rounded-md bg-zinc-900 px-4 py-2 text-white transition-colors hover:bg-black disabled:opacity-50 dark:bg-zinc-200 dark:text-black dark:hover:bg-white"
+            className="w-full pixel-wooden-button px-4 py-2 disabled:opacity-50"
             disabled={loading}
           >
             {loading ? "处理中..." : mode === "signup" ? "注册" : "登录"}
           </button>
         </form>
-        <div className="mt-3 flex items-center justify-between text-sm text-zinc-600 dark:text-zinc-400">
-          <button onClick={() => setMode(mode === "signup" ? "signin" : "signup")} className="underline">
+        <div className="pixel-font mt-3 flex items-center justify-between text-sm" style={{ color: '#8b6f47' }}>
+          <button onClick={() => setMode(mode === "signup" ? "signin" : "signup")} className="underline" style={{ color: '#6b5335' }}>
             {mode === "signup" ? "已有账号？去登录" : "没有账号？去注册"}
           </button>
-          <button onClick={handleSignOut} className="underline">登出</button>
+          <button onClick={handleSignOut} className="underline" style={{ color: '#6b5335' }}>登出</button>
         </div>
         {message && (
-          <div className="mt-4 rounded-md border border-zinc-300 p-3 text-sm text-zinc-800 dark:border-zinc-700 dark:text-zinc-200">
+          <div className="pixel-font mt-4 pixel-wooden-card p-3 text-sm" style={{ color: '#6b5335' }}>
             {message}
           </div>
         )}

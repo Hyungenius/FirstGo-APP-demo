@@ -37,15 +37,16 @@ export default function ModalDetail({ isOpen, onClose, title, children }: Props)
   return (
     <div
       ref={backdropRef}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
       onClick={handleBackdropClick}
       style={{
         animation: "fadeIn 0.2s ease-out",
+        backgroundColor: 'rgba(0, 0, 0, 0.5)'
       }}
     >
       <div
         ref={modalRef}
-        className="relative w-full max-w-2xl rounded border border-gray-200 bg-white p-6 shadow-lg"
+        className="relative w-full max-w-2xl pixel-wooden-container p-6"
         onClick={(e) => e.stopPropagation()}
         style={{
           animation: "slideUp 0.2s ease-out",
@@ -53,17 +54,18 @@ export default function ModalDetail({ isOpen, onClose, title, children }: Props)
       >
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 rounded p-1 text-gray-500 transition-colors hover:bg-gray-100 hover:text-black"
+          className="pixel-wooden-button absolute right-4 top-4 p-1"
           aria-label="关闭"
+          style={{ minWidth: 'auto', padding: '4px' }}
         >
-          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: '#6b5335' }}>
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
         {title && (
-          <h2 className="mb-4 pr-8 text-xl font-medium text-black">{title}</h2>
+          <h2 className="pixel-font mb-4 pr-8 text-xl font-medium" style={{ color: '#6b5335' }}>{title}</h2>
         )}
-        <div className="max-h-[70vh] overflow-y-auto">{children}</div>
+        <div className="pixel-font max-h-[70vh] overflow-y-auto">{children}</div>
       </div>
       <style jsx>{`
         @keyframes fadeIn {

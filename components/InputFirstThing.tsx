@@ -48,29 +48,29 @@ export default function InputFirstThing({ className, onCreated, onError }: Props
   return (
     <div className={className}>
       <div className="flex flex-col gap-4">
+        {/* 输入行 */}
         <div className="flex items-center gap-3">
-          <span className="pixel-font text-base" style={{ color: '#4a4a4a' }}>第一次</span>
+          <span className="pixel-font text-base" style={{ color: '#6b5335' }}>第一次</span>
           <input
             value={value}
             onChange={(e) => setValue(e.target.value)}
             placeholder="健身"
-            className="pixel-font flex-1 rounded px-3 py-2 text-base placeholder:opacity-60 focus:outline-none"
+            className="pixel-font flex-1 px-3 py-2 text-base placeholder:opacity-60 focus:outline-none"
             style={{ 
-              border: '2px dashed #8b6f47',
+              border: '3px solid #8b6f47',
+              borderRadius: '6px',
               backgroundColor: '#faf5ed',
-              color: '#4a4a4a'
+              color: '#6b5335',
+              imageRendering: 'pixelated',
+              boxShadow: 'inset 0 0 0 1px rgba(107, 83, 53, 0.2), 0 2px 4px rgba(0, 0, 0, 0.1)'
             }}
           />
         </div>
+        {/* 开始计划按钮 */}
         <button
           type="button"
           onClick={handleSubmit}
-          className="pixel-font mx-auto flex items-center justify-center gap-2 rounded px-6 py-2 text-base transition-opacity hover:opacity-80 disabled:opacity-50"
-          style={{ 
-            border: '3px solid #8b6f47',
-            backgroundColor: '#faf5ed',
-            color: '#4a4a4a'
-          }}
+          className="pixel-wooden-button mx-auto flex items-center justify-center gap-2 px-6 py-2 text-base disabled:opacity-50"
           disabled={!value.trim() || loading}
         >
           {loading && <LoadingSpinner size="sm" />}
@@ -78,7 +78,7 @@ export default function InputFirstThing({ className, onCreated, onError }: Props
         </button>
       </div>
       {message && (
-        <div className="mt-2 text-sm pixel-font" style={{ color: '#4a4a4a' }}>{message}</div>
+        <div className="pixel-font mt-2 text-sm" style={{ color: '#6b5335' }}>{message}</div>
       )}
     </div>
   );

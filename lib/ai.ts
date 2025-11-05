@@ -145,14 +145,98 @@ export async function callAI(prompt: string): Promise<unknown> {
       throw new Error("AI 返回内容为空");
     }
 
-    // 尝试解析 JSON 响应
-    // 移除可能的 markdown 代码块标记
-    const cleanedContent = content.trim().replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "").trim();
+    // 提取JSON内容：更强大的清理逻辑
+    let cleanedContent = content.trim();
+    
+    // 1. 移除Markdown代码块标记（包括各种变体）
+    cleanedContent = cleanedContent
+      .replace(/^```json\s*/i, "")
+      .replace(/^```JSON\s*/i, "")
+      .replace(/^```\s*/i, "")
+      .replace(/\s*```$/i, "")
+      .trim();
+    
+    // 2. 尝试找到JSON对象的开始位置（查找第一个 '{'）
+    const jsonStartIndex = cleanedContent.indexOf('{');
+    if (jsonStartIndex < 0) {
+      throw new Error(`AI 返回内容中未找到 JSON 对象。内容预览: ${cleanedContent.substring(0, 200)}...`);
+    }
+    
+    // 如果JSON前有文本，只保留JSON部分
+    if (jsonStartIndex > 0) {
+      cleanedContent = cleanedContent.substring(jsonStartIndex);
+    }
+    
+    // 3. 使用更智能的方法找到JSON对象的结束位置
+    // 通过计算大括号的匹配来找到正确的结束位置
+    let braceCount = 0;
+    let jsonEndIndex = -1;
+    for (let i = 0; i < cleanedContent.length; i++) {
+      if (cleanedContent[i] === '{') {
+        braceCount++;
+      } else if (cleanedContent[i] === '}') {
+        braceCount--;
+        if (braceCount === 0) {
+          jsonEndIndex = i;
+          break;
+        }
+      }
+    }
+    
+    // 如果找到了匹配的结束位置，截取JSON部分
+    if (jsonEndIndex >= 0) {
+      cleanedContent = cleanedContent.substring(0, jsonEndIndex + 1);
+    } else {
+      // 如果没找到匹配的结束位置，尝试从后往前找最后一个 '}'
+      const lastBraceIndex = cleanedContent.lastIndexOf('}');
+      if (lastBraceIndex > jsonStartIndex) {
+        cleanedContent = cleanedContent.substring(0, lastBraceIndex + 1);
+      } else {
+        throw new Error(`AI 返回的 JSON 格式不完整。内容预览: ${cleanedContent.substring(0, 200)}...`);
+      }
+    }
+    
+    cleanedContent = cleanedContent.trim();
     
     try {
-      return JSON.parse(cleanedContent);
+      const parsed = JSON.parse(cleanedContent);
+      return parsed;
     } catch (parseError) {
-      throw new Error(`AI 返回的 JSON 解析失败: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
+      // 如果解析失败，尝试修复常见的JSON格式问题
+      // 例如：未加引号的字符串值
+      let fixedContent = cleanedContent;
+      
+      // 尝试修复常见的JSON格式错误
+      // 1. 修复未加引号的字符串值（在冒号后面）
+      fixedContent = fixedContent.replace(/:\s*([^"{\[,\n}]+?)([,}\n])/g, (match, value, suffix) => {
+        // 如果是数字、布尔值或null，不处理
+        if (/^(true|false|null|\d+\.?\d*)$/.test(value.trim())) {
+          return match;
+        }
+        // 如果是已加引号的字符串，不处理
+        if (value.trim().startsWith('"') && value.trim().endsWith('"')) {
+          return match;
+        }
+        // 否则添加引号
+        return `: "${value.trim()}"${suffix}`;
+      });
+      
+      try {
+        return JSON.parse(fixedContent);
+      } catch (secondParseError) {
+        // 如果修复后仍然失败，返回详细错误信息
+        const preview = cleanedContent.substring(0, 300);
+        const errorPos = cleanedContent.indexOf('针');
+        const contextStart = Math.max(0, errorPos - 50);
+        const contextEnd = Math.min(cleanedContent.length, errorPos + 50);
+        const errorContext = cleanedContent.substring(contextStart, contextEnd);
+        
+        throw new Error(
+          `AI 返回的 JSON 解析失败: ${parseError instanceof Error ? parseError.message : String(parseError)}. ` +
+          `错误位置上下文: ...${errorContext}... ` +
+          `完整内容预览: ${preview}...`
+        );
+      }
     }
   } catch (error) {
     if (error instanceof Error) {

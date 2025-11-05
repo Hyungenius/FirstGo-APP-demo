@@ -9,11 +9,11 @@ export async function GET() {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  // 获取用户的所有勋章，关联 badges 表获取详细信息
+  // 获取用户的所有勋章，关联 badges 表获取详细信息，并关联教程获取用户输入文字
   const { data, error } = await supabase
     .from("user_badges")
     .select(
-      "id, awarded_at, source_tutorial, badge_id, badges:badge_id (id, key, title, description, icon_url)"
+      "id, awarded_at, source_tutorial, badge_id, badges:badge_id (id, key, title, description, icon_url), tutorial_instances:source_tutorial (id, input_text)"
     )
     .eq("user_id", user.id)
     .order("awarded_at", { ascending: false });

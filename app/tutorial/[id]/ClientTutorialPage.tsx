@@ -148,35 +148,27 @@ export default function ClientTutorialPage({ tutorialId }: { tutorialId: string 
   }
 
   if (loading) {
-    return <div className="p-6 text-gray-600">加载中...</div>;
+    return <div className="p-6 pixel-font" style={{ backgroundColor: '#f5f0e8', color: '#6b5335' }}>加载中...</div>;
   }
   if (error) {
-    return <div className="p-6 text-red-600">{error}</div>;
+    return <div className="p-6 pixel-font" style={{ backgroundColor: '#f5f0e8', color: '#8b0000' }}>{error}</div>;
   }
 
   return (
-    <div className="relative mx-auto w-full max-w-3xl bg-white p-6" style={{ minHeight: '100vh' }}>
-      {/* 左侧边栏 */}
-      <div 
-        className="absolute left-0 top-0 bottom-0 w-16 opacity-30"
-        style={{ backgroundColor: '#f5f0e8' }}
-      >
-        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 text-2xl">✦</div>
-      </div>
-
+    <div className="relative mx-auto w-full max-w-3xl p-6 pixel-font" style={{ minHeight: '100vh', backgroundColor: '#f5f0e8' }}>
       {/* 主要内容 */}
-      <div className="relative z-10 ml-20">
+      <div className="relative z-10">
         {/* 返回按钮 */}
         <Link
           href="/"
-          className="mb-4 inline-block text-sm text-gray-600 hover:underline"
+          className="mb-4 inline-block pixel-wooden-button text-sm"
         >
           ← 返回首页
         </Link>
 
         {/* 标题 */}
-        <div className="mb-6 rounded border border-gray-200 bg-white p-4 text-center">
-          <h1 className="text-xl font-medium text-black">
+        <div className="mb-6 pixel-wooden-container p-4 text-center">
+          <h1 className="pixel-font text-xl font-medium" style={{ color: '#6b5335' }}>
             {title || "教程"}
           </h1>
         </div>
@@ -190,20 +182,42 @@ export default function ClientTutorialPage({ tutorialId }: { tutorialId: string 
 
         {/* 准备部分 */}
         {items.length > 0 && (
-          <div className="mb-6 rounded border border-gray-200 bg-white p-4">
+          <div className="mb-6 pixel-wooden-card p-4">
             <div className="flex">
               <div className="w-20 flex items-center justify-center">
-                <span className="text-4xl">📦</span>
+                <img 
+                  src="/assets/bag.PNG" 
+                  alt="背包" 
+                  className="pixel-image"
+                  style={{ 
+                    width: 'auto',
+                    height: 'auto',
+                    maxWidth: '64px',
+                    maxHeight: '64px',
+                    objectFit: 'contain',
+                    imageRendering: 'pixelated'
+                  }}
+                />
               </div>
               <div className="flex-1 pl-4">
                 <div className="mb-3 flex items-center justify-between">
-                  <h2 className="text-base font-medium text-black flex items-center gap-2">
-                    <span>📦</span>
+                  <h2 className="pixel-font text-base font-medium flex items-center gap-2" style={{ color: '#6b5335' }}>
+                    <img 
+                      src="/assets/bag.PNG" 
+                      alt="背包" 
+                      className="pixel-image"
+                      style={{ 
+                        width: '20px',
+                        height: '20px',
+                        objectFit: 'contain',
+                        imageRendering: 'pixelated'
+                      }}
+                    />
                     准备物品
                   </h2>
                   <button
                     onClick={() => setPreparationExpanded(!preparationExpanded)}
-                    className="rounded border border-gray-200 px-2 py-1 text-xs text-black"
+                    className="pixel-wooden-button px-2 py-1 text-xs"
                   >
                     {preparationExpanded ? "收缩" : "展开"}
                   </button>
@@ -268,15 +282,15 @@ export default function ClientTutorialPage({ tutorialId }: { tutorialId: string 
                 />
                 {activeStepId === s.id && (
                   <div className="mt-2 flex justify-center">
-                    <span className="text-gray-400">▶</span>
+                    <span className="pixel-font" style={{ color: '#8b6f47' }}>▶</span>
                   </div>
                 )}
               </div>
               {isPending(s.id) && (
-                <div className="flex items-center justify-between rounded border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700">
+                <div className="flex items-center justify-between pixel-wooden-card px-3 py-2 text-sm" style={{ color: '#6b5335' }}>
                   已标记完成。2 秒内可撤销。
                   <button
-                    className="rounded border border-gray-300 px-2 py-1 text-xs hover:bg-gray-100"
+                    className="pixel-wooden-button px-2 py-1 text-xs"
                     onClick={() => undoStep(s.id)}
                   >
                     撤销
@@ -289,7 +303,7 @@ export default function ClientTutorialPage({ tutorialId }: { tutorialId: string 
 
         {/* 完成按钮 */}
         <button
-          className="w-full rounded border border-gray-200 bg-white px-4 py-3 text-base font-medium text-black transition-colors hover:bg-gray-50 disabled:opacity-50"
+          className="w-full pixel-wooden-button px-4 py-3 text-base font-medium disabled:opacity-50"
           disabled={!allDone}
           onClick={async () => {
             try {

@@ -85,45 +85,45 @@ export default function StepDetailContent({ tutorialId, stepId }: StepDetailCont
   }, [step, tutorialId, stepId, loading, generating]);
 
   if (loading) {
-    return <div className="p-4 text-gray-600">加载中...</div>;
+    return <div className="pixel-font p-4" style={{ color: '#6b5335' }}>加载中...</div>;
   }
   if (error || !step) {
-    return <div className="p-4 text-red-600">{error || "步骤不存在"}</div>;
+    return <div className="pixel-font p-4" style={{ color: '#8b0000' }}>{error || "步骤不存在"}</div>;
   }
 
   return (
-    <div>
-      <div className="mb-2 text-sm text-gray-500">步骤 {step.ord}</div>
-      <h3 className="mb-3 text-xl font-medium text-black">{step.title}</h3>
+    <div className="pixel-font">
+      <div className="mb-2 text-sm" style={{ color: '#8b6f47' }}>步骤 {step.ord}</div>
+      <h3 className="mb-3 text-xl font-medium" style={{ color: '#6b5335' }}>{step.title}</h3>
       {step.summary && (
-        <p className="mb-4 text-gray-700">{step.summary}</p>
+        <p className="mb-4" style={{ color: '#6b5335' }}>{step.summary}</p>
       )}
       {generating ? (
-        <div className="mt-4 flex items-center gap-2 text-sm text-gray-500">
+        <div className="mt-4 flex items-center gap-2 text-sm" style={{ color: '#8b6f47' }}>
           <LoadingSpinner size="sm" />
           正在生成详细说明...
         </div>
       ) : step.detail ? (
-        <div className="mt-4 space-y-2 text-gray-800 prose prose-sm max-w-none">
+        <div className="mt-4 space-y-2 prose prose-sm max-w-none" style={{ color: '#6b5335' }}>
           <ReactMarkdown
             components={{
-              h1: ({ children }) => <h1 className="text-xl font-semibold mb-3 mt-4 text-black">{children}</h1>,
-              h2: ({ children }) => <h2 className="text-lg font-semibold mb-2 mt-3 text-black">{children}</h2>,
-              h3: ({ children }) => <h3 className="text-base font-semibold mb-2 mt-2 text-black">{children}</h3>,
-              p: ({ children }) => <p className="mb-3 text-gray-800">{children}</p>,
-              strong: ({ children }) => <strong className="font-semibold text-black">{children}</strong>,
-              em: ({ children }) => <em className="italic">{children}</em>,
-              ul: ({ children }) => <ul className="list-disc list-inside mb-3 space-y-1 ml-4">{children}</ul>,
-              ol: ({ children }) => <ol className="list-decimal list-inside mb-3 space-y-1 ml-4">{children}</ol>,
-              li: ({ children }) => <li className="text-gray-800">{children}</li>,
-              code: ({ children }) => <code className="bg-gray-100 px-1.5 py-0.5 rounded text-sm font-mono">{children}</code>,
+              h1: ({ children }: any) => <h1 className="pixel-font text-xl font-semibold mb-3 mt-4" style={{ color: '#6b5335' }}>{children}</h1>,
+              h2: ({ children }: any) => <h2 className="pixel-font text-lg font-semibold mb-2 mt-3" style={{ color: '#6b5335' }}>{children}</h2>,
+              h3: ({ children }: any) => <h3 className="pixel-font text-base font-semibold mb-2 mt-2" style={{ color: '#6b5335' }}>{children}</h3>,
+              p: ({ children }: any) => <p className="pixel-font mb-3" style={{ color: '#6b5335' }}>{children}</p>,
+              strong: ({ children }: any) => <strong className="pixel-font font-semibold" style={{ color: '#6b5335' }}>{children}</strong>,
+              em: ({ children }: any) => <em className="pixel-font italic">{children}</em>,
+              ul: ({ children }: any) => <ul className="pixel-font list-disc list-inside mb-3 space-y-1 ml-4">{children}</ul>,
+              ol: ({ children }: any) => <ol className="pixel-font list-decimal list-inside mb-3 space-y-1 ml-4">{children}</ol>,
+              li: ({ children }: any) => <li className="pixel-font" style={{ color: '#6b5335' }}>{children}</li>,
+              code: ({ children }: any) => <code className="pixel-font px-1.5 py-0.5 text-sm font-mono pixel-wooden-card" style={{ color: '#6b5335' }}>{children}</code>,
             } as Components}
           >
             {step.detail}
           </ReactMarkdown>
         </div>
       ) : (
-        <div className="mt-4 text-sm text-gray-500">详细说明待生成</div>
+        <div className="mt-4 text-sm" style={{ color: '#8b6f47' }}>详细说明待生成</div>
       )}
     </div>
   );
