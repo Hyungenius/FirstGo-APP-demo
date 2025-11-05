@@ -177,9 +177,6 @@ export default function ClientBadgesPage() {
                         objectFit: 'contain',
                         imageRendering: 'pixelated'
                       }}
-                      onError={(e) => {
-                        console.error("视频加载失败:", e);
-                      }}
                     >
                       您的浏览器不支持视频播放。
                     </video>
