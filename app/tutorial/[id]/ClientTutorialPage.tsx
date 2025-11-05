@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import TutorialProgress from "@/components/TutorialProgress";
 import SwipeableStep from "@/components/SwipeableStep";
 import ModalDetail from "@/components/ModalDetail";
 import StepDetailContent from "@/components/StepDetailContent";
@@ -164,12 +166,27 @@ export default function ClientTutorialPage({ tutorialId }: { tutorialId: string 
 
       {/* 主要内容 */}
       <div className="relative z-10 ml-20">
+        {/* 返回按钮 */}
+        <Link
+          href="/"
+          className="mb-4 inline-block text-sm text-gray-600 hover:underline"
+        >
+          ← 返回首页
+        </Link>
+
         {/* 标题 */}
         <div className="mb-6 rounded border border-gray-200 bg-white p-4 text-center">
           <h1 className="text-xl font-medium text-black">
             {title || "教程"}
           </h1>
         </div>
+
+        {/* 进度条 */}
+        {steps.length > 0 && (
+          <div className="mb-6">
+            <TutorialProgress total={steps.length} completed={completed} />
+          </div>
+        )}
 
         {/* 准备部分 */}
         {items.length > 0 && (
