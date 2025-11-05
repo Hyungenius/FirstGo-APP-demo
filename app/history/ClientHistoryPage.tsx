@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import ProgressBarSimple from "@/components/ProgressBarSimple";
 
 interface TutorialItem {
@@ -16,7 +15,6 @@ interface TutorialItem {
 }
 
 export default function ClientHistoryPage() {
-  const router = useRouter();
   const [items, setItems] = useState<TutorialItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -83,10 +81,10 @@ export default function ClientHistoryPage() {
       ) : (
         <div className="grid grid-cols-1 gap-4">
           {items.map((item) => (
-            <div
+            <Link
               key={item.id}
-              className="cursor-pointer pixel-wooden-card p-4 transition-shadow hover:shadow-lg"
-              onClick={() => router.push(`/tutorial/${item.id}`)}
+              href={`/tutorial/${item.id}`}
+              className="block cursor-pointer pixel-wooden-card p-4 transition-shadow hover:shadow-lg"
             >
               <div className="mb-2 flex items-start justify-between">
                 <div className="flex-1">
@@ -108,7 +106,7 @@ export default function ClientHistoryPage() {
                 <span>创建于 {formatDate(item.created_at)}</span>
                 {item.completed_at && <span>完成于 {formatDate(item.completed_at)}</span>}
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       )}

@@ -14,11 +14,15 @@ export default async function CompletePage(ctx: RouteParams) {
           loop
           muted
           playsInline
+          preload="auto"
           className="w-full h-auto"
           style={{
             objectFit: 'contain',
             imageRendering: 'pixelated',
             borderRadius: '4px'
+          }}
+          onError={(e) => {
+            console.error("视频加载失败:", e);
           }}
         >
           您的浏览器不支持视频播放。

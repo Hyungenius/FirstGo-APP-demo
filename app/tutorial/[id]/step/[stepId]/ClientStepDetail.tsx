@@ -75,11 +75,16 @@ export default function ClientStepDetail({ tutorialId, stepId }: { tutorialId: s
         const data = await res.json();
         if (!res.ok) throw new Error(data?.error || "生成失败");
         if (cancelled) return;
-        setStep((prev) => (prev ? { ...prev, detail: data.detail } : null));
+        // 立即更新 step 状态，确保界面立即刷新
+        const newDetail = data.detail || null;
+        setStep((prev) => {
+          if (!prev) return null;
+          return { ...prev, detail: newDetail };
+        });
+        setGenerating(false);
       } catch (e) {
         const errorMessage = e instanceof Error ? e.message : "生成详细说明失败";
         if (!cancelled) setError(errorMessage);
-      } finally {
         if (!cancelled) setGenerating(false);
       }
     })();

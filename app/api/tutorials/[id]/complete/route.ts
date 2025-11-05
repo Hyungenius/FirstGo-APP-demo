@@ -19,28 +19,30 @@ export async function PATCH(_req: Request, ctx: RouteParams) {
     .from("tutorial_instances")
     .update({ completed: true, completed_at: now, progress: 1 })
     .eq("id", tutorialId)
-    .select("id, completed, completed_at, progress")
+    .select("id, completed, completed_at, progress, input_text")
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  // 生成勋章：查找或创建"首次完成"勋章
-  const badgeKey = "first_completion";
+  // 为这个教程创建唯一的勋章
+  // 使用教程ID作为勋章key，确保每个教程有唯一的勋章
+  const badgeKey = `tutorial_${tutorialId}`;
   let badgeId: string | null = null;
 
-  // 查找是否存在该勋章定义
+  // 查找是否存在该教程的勋章定义
   const { data: existingBadge } = await supabase.from("badges").select("id").eq("key", badgeKey).single();
 
   if (existingBadge) {
     badgeId = existingBadge.id;
   } else {
-    // 创建新勋章定义
+    // 创建新勋章定义，使用用户输入的文字作为标题
+    const tutorialTitle = data?.input_text || "完成教程";
     const { data: newBadge, error: badgeErr } = await supabase
       .from("badges")
       .insert([
         {
           key: badgeKey,
-          title: "首次完成",
-          description: "完成了第一个教程",
+          title: tutorialTitle,
+          description: "完成了一个教程",
           icon_url: null,
         },
       ])
@@ -64,13 +66,17 @@ export async function PATCH(_req: Request, ctx: RouteParams) {
       .single();
 
     if (!existingUserBadge) {
-      await supabase.from("user_badges").insert([
+      const { error: insertError } = await supabase.from("user_badges").insert([
         {
           user_id: user.id,
           badge_id: badgeId,
           source_tutorial: tutorialId,
+          awarded_at: now,
         },
       ]);
+      if (insertError) {
+        console.error("User badge insertion failed:", insertError);
+      }
     }
   }
 
