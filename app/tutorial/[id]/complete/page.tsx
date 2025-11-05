@@ -9,7 +9,7 @@ export default async function CompletePage(ctx: RouteParams) {
       {/* 视频播放 */}
       <div className="w-full max-w-md pixel-wooden-container p-4">
         <video
-          src="/assets/done.MOV"
+          src="/assets/done.mov"
           autoPlay
           loop
           muted

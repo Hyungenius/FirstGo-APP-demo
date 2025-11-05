@@ -223,7 +223,7 @@ export async function callAI(prompt: string): Promise<unknown> {
       
       try {
         return JSON.parse(fixedContent);
-      } catch (secondParseError) {
+      } catch {
         // 如果修复后仍然失败，返回详细错误信息
         const preview = cleanedContent.substring(0, 300);
         const errorPos = cleanedContent.indexOf('针');

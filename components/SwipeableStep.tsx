@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 
 interface Props {
   ord: number;
@@ -11,7 +11,8 @@ interface Props {
   onDetailClick?: () => void;
 }
 
-const LONG_PRESS_DURATION = 800; // 长按时间（毫秒）
+const SWIPE_THRESHOLD = 100; // 右滑阈值（像素）
+const SWIPE_VELOCITY_THRESHOLD = 0.5; // 滑动速度阈值（像素/毫秒）
 
 // 数字转中文汉字
 function numberToChinese(num: number): string {
@@ -33,109 +34,132 @@ function numberToChinese(num: number): string {
 
 export default function SwipeableStep({ ord, title, summary, completed, onComplete, onDetailClick }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const [longPressProgress, setLongPressProgress] = useState(0);
-  const [isLongPressing, setIsLongPressing] = useState(false);
-  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [swipeProgress, setSwipeProgress] = useState(0);
+  const [isSwipeActive, setIsSwipeActive] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
+  
+  const startXRef = useRef<number | null>(null);
+  const startYRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number | null>(null);
+  const currentXRef = useRef<number | null>(null);
   const clickTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const longPressCompletedRef = useRef<boolean>(false);
+  const prevCompletedRef = useRef(completed);
+
+  // 当 completed 从 true 变为 false 时（撤销），重置 isCompleting
+  // 使用 useLayoutEffect 确保在渲染前同步重置状态，避免闪烁
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useLayoutEffect(() => {
+    const prevCompleted = prevCompletedRef.current;
+    prevCompletedRef.current = completed;
+    
+    // 如果从完成变为未完成（撤销），重置状态
+    if (prevCompleted && !completed) {
+      setIsCompleting(false);
+      setSwipeProgress(0);
+      setIsSwipeActive(false);
+    }
+  }, [completed]);
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     if (completed) return;
     
-    // 清除之前的定时器
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-    }
-    if (progressIntervalRef.current) {
-      clearInterval(progressIntervalRef.current);
-    }
+    // 清除之前的点击定时器
     if (clickTimerRef.current) {
       clearTimeout(clickTimerRef.current);
+      clickTimerRef.current = null;
     }
     
-    setIsLongPressing(true);
-    setLongPressProgress(0);
-    
-    // 开始进度更新
-    const startTime = Date.now();
-    progressIntervalRef.current = setInterval(() => {
-      const elapsed = Date.now() - startTime;
-      const progress = Math.min((elapsed / LONG_PRESS_DURATION) * 100, 100);
-      setLongPressProgress(progress);
-    }, 16); // 约 60fps
-    
-    // 设置长按完成定时器
-    longPressCompletedRef.current = false;
-    longPressTimerRef.current = setTimeout(() => {
-      longPressCompletedRef.current = true;
-      onComplete?.();
-      setIsLongPressing(false);
-      setLongPressProgress(0);
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-        progressIntervalRef.current = null;
-      }
-    }, LONG_PRESS_DURATION);
-    
-    // 设置点击定时器（用于区分点击和长按）
-    clickTimerRef.current = setTimeout(() => {
-      // 如果长按时间还没到，说明是普通点击
-      // 这里不处理，因为长按会触发完成，点击应该触发详情
-    }, 100);
+    startXRef.current = e.clientX;
+    startYRef.current = e.clientY;
+    startTimeRef.current = Date.now();
+    currentXRef.current = e.clientX;
+    setIsSwipeActive(true);
+    setSwipeProgress(0);
     
     (e.target as Element).setPointerCapture?.(e.pointerId);
-  }, [completed, onComplete]);
+  }, [completed]);
 
-  const onPointerUp = useCallback(() => {
-    // 清除所有定时器
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
+  const onPointerMove = useCallback((e: React.PointerEvent) => {
+    if (completed || !isSwipeActive || startXRef.current === null || !containerRef.current) return;
+    
+    currentXRef.current = e.clientX;
+    const deltaX = e.clientX - startXRef.current;
+    const deltaY = Math.abs(e.clientY - (startYRef.current || 0));
+    
+    // 只处理向右滑动，且垂直偏移不能太大（避免误触）
+    if (deltaX > 0 && deltaY < 50) {
+      const containerWidth = containerRef.current.offsetWidth;
+      const progress = Math.min((deltaX / containerWidth) * 100, 100);
+      setSwipeProgress(progress);
+    } else {
+      setSwipeProgress(0);
     }
-    if (progressIntervalRef.current) {
-      clearInterval(progressIntervalRef.current);
-      progressIntervalRef.current = null;
+  }, [completed, isSwipeActive]);
+
+  const onPointerUp = useCallback((e: React.PointerEvent) => {
+    if (completed || startXRef.current === null || startTimeRef.current === null) {
+      setIsSwipeActive(false);
+      setSwipeProgress(0);
+      return;
     }
     
-    // 如果长按已完成，不触发详情
-    const wasLongPressCompleted = longPressCompletedRef.current;
-    longPressCompletedRef.current = false;
+    const endX = e.clientX;
+    const endY = e.clientY;
+    const endTime = Date.now();
     
-    setIsLongPressing(false);
-    setLongPressProgress(0);
+    const deltaX = endX - startXRef.current;
+    const deltaY = Math.abs(endY - (startYRef.current || 0));
+    const deltaTime = endTime - startTimeRef.current;
+    const velocity = deltaTime > 0 ? Math.abs(deltaX) / deltaTime : 0;
     
-    if (clickTimerRef.current) {
-      clearTimeout(clickTimerRef.current);
-      clickTimerRef.current = null;
-    }
+    // 判断是否为右滑完成
+    const isRightSwipe = deltaX > SWIPE_THRESHOLD && deltaY < 50 && deltaX > 0;
+    const isFastSwipe = velocity > SWIPE_VELOCITY_THRESHOLD && deltaX > 50;
     
-    // 如果长按未完成，说明是点击，触发详情
-    if (!wasLongPressCompleted && isLongPressing) {
-      // 延迟一点触发，避免与长按完成冲突
+    if (isRightSwipe || isFastSwipe) {
+      // 右滑完成 - 先播放动画
+      setIsCompleting(true);
+      setIsSwipeActive(false);
+      setSwipeProgress(100);
+      
+      // 延迟调用 onComplete，让动画先播放
       setTimeout(() => {
-        onDetailClick?.();
-      }, 50);
+        onComplete?.();
+      }, 300);
+    } else {
+      // 判断是否为点击（移动距离很小）
+      const isClick = Math.abs(deltaX) < 10 && Math.abs(deltaY) < 10;
+      
+      if (isClick) {
+        // 延迟触发点击，避免与滑动冲突
+        clickTimerRef.current = setTimeout(() => {
+          onDetailClick?.();
+        }, 100);
+      } else {
+        // 滑动未达到阈值，重置
+        setIsSwipeActive(false);
+        setSwipeProgress(0);
+      }
     }
-  }, [isLongPressing, onDetailClick]);
+    
+    // 重置
+    startXRef.current = null;
+    startYRef.current = null;
+    startTimeRef.current = null;
+    currentXRef.current = null;
+  }, [completed, onComplete, onDetailClick]);
 
   const onPointerCancel = useCallback(() => {
-    // 取消时清除所有定时器
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
-    if (progressIntervalRef.current) {
-      clearInterval(progressIntervalRef.current);
-      progressIntervalRef.current = null;
-    }
+    setIsSwipeActive(false);
+    setSwipeProgress(0);
+    startXRef.current = null;
+    startYRef.current = null;
+    startTimeRef.current = null;
+    currentXRef.current = null;
     if (clickTimerRef.current) {
       clearTimeout(clickTimerRef.current);
       clickTimerRef.current = null;
     }
-    longPressCompletedRef.current = false;
-    setIsLongPressing(false);
-    setLongPressProgress(0);
   }, []);
 
   return (
@@ -143,45 +167,66 @@ export default function SwipeableStep({ ord, title, summary, completed, onComple
       ref={containerRef}
       className={`relative overflow-hidden pixel-wooden-card ${completed ? "opacity-60" : ""}`}
       onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerCancel}
-      style={{ touchAction: 'none', borderRadius: '6px' }}
+      style={{ 
+        touchAction: 'pan-y', 
+        borderRadius: '6px', 
+        cursor: completed ? 'default' : 'grab',
+        opacity: isCompleting ? 0.5 : (completed ? 0.6 : 1),
+        transition: isCompleting ? 'opacity 300ms ease-out' : (completed ? 'opacity 300ms ease-out' : 'none')
+      }}
     >
-      {/* 长按进度提示 */}
-      {isLongPressing && !completed && (
-        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-green-100/90">
-          <div className="mb-2 text-base font-medium text-green-700">
-            长按完成中...
-          </div>
-          <div className="w-3/4 h-2 bg-green-200 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-green-600 transition-all duration-75 ease-linear"
-              style={{ width: `${longPressProgress}%` }}
-            />
-          </div>
-          <div className="mt-2 text-sm text-green-700">
-            {Math.round(longPressProgress)}%
+      {/* 右滑进度条 */}
+      {isSwipeActive && !completed && !isCompleting && swipeProgress > 0 && (
+        <div 
+          className="absolute inset-y-0 left-0 z-10 transition-all duration-75 ease-out"
+          style={{ 
+            width: `${swipeProgress}%`,
+            backgroundColor: 'rgba(139, 111, 71, 0.3)',
+            borderRight: '3px solid #8b6f47'
+          }}
+        />
+      )}
+      
+      {/* 右滑完成提示 */}
+      {isSwipeActive && !completed && !isCompleting && swipeProgress > 50 && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center">
+          <div className="pixel-font text-base font-medium" style={{ color: '#8b6f47' }}>
+            {swipeProgress >= SWIPE_THRESHOLD ? '释放完成' : '继续右滑'}
           </div>
         </div>
       )}
       
       <div className="relative z-10 p-4 pixel-font" style={{ backgroundColor: '#faf5ed' }}>
-        <div className="mb-1 flex items-center gap-2 text-base font-medium" style={{ color: '#6b5335' }}>
+        <div className="mb-1 flex items-center gap-2 text-base font-medium" style={{ 
+          color: '#6b5335',
+          textDecoration: (completed || isCompleting) ? 'line-through' : 'none',
+          opacity: (completed || isCompleting) ? 0.6 : 1,
+          transition: 'opacity 300ms ease-out'
+        }}>
           <span>第{numberToChinese(ord)}步</span>
           <span className="text-base" style={{ color: '#6b5335' }}>{title}</span>
         </div>
         {summary && (
-          <div className="text-sm" style={{ color: '#6b5335' }}>{summary}</div>
+          <div className="text-sm" style={{ 
+            color: '#6b5335',
+            textDecoration: (completed || isCompleting) ? 'line-through' : 'none',
+            opacity: (completed || isCompleting) ? 0.6 : 1,
+            transition: 'opacity 300ms ease-out'
+          }}>{summary}</div>
         )}
         {completed && (
           <div className="mt-2 text-xs" style={{ color: '#8b6f47' }}>已完成</div>
         )}
-        {!completed && (
-          <div className="mt-2 text-xs" style={{ color: '#8b6f47' }}>长按完成</div>
+        {!completed && !isCompleting && (
+          <div className="mt-2 text-xs flex items-center gap-1" style={{ color: '#8b6f47' }}>
+            <span>右滑完成</span>
+            <span className="inline-block animate-pulse">→</span>
+          </div>
         )}
       </div>
     </div>
   );
 }
-
-

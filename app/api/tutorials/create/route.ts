@@ -46,7 +46,17 @@ export async function POST(req: Request) {
 
 6.  "difficulty": (数字) 1-5 之间的难度数字。
 
-请确保你的回答**只有**这个 JSON 对象，不要有任何其他文字或 Markdown 标记。`;
+请确保你的回答**只有**这个 JSON 对象，不要有任何其他文字或 Markdown 标记。
+
+重要约束：
+
+请你只返回一个 RFC 8259 兼容的 JSON 格式的字符串。
+
+不要包含任何 JSON 之外的解释性文字、开场白（例如"好的，这是您要的..."）或结束语。
+
+不要使用 Markdown 语法（例如 \`\`\`json ... \`\`\`）。
+
+确保返回的内容可以直接被 JSON.parse() 解析。`;
 
     const aiRaw = await callAI(prompt);
     const structured = parseAIOutput(aiRaw);

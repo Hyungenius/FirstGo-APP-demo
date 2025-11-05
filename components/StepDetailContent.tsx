@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import type { Components } from "react-markdown";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -107,16 +108,16 @@ export default function StepDetailContent({ tutorialId, stepId }: StepDetailCont
         <div className="mt-4 space-y-2 prose prose-sm max-w-none" style={{ color: '#6b5335' }}>
           <ReactMarkdown
             components={{
-              h1: ({ children }: any) => <h1 className="pixel-font text-xl font-semibold mb-3 mt-4" style={{ color: '#6b5335' }}>{children}</h1>,
-              h2: ({ children }: any) => <h2 className="pixel-font text-lg font-semibold mb-2 mt-3" style={{ color: '#6b5335' }}>{children}</h2>,
-              h3: ({ children }: any) => <h3 className="pixel-font text-base font-semibold mb-2 mt-2" style={{ color: '#6b5335' }}>{children}</h3>,
-              p: ({ children }: any) => <p className="pixel-font mb-3" style={{ color: '#6b5335' }}>{children}</p>,
-              strong: ({ children }: any) => <strong className="pixel-font font-semibold" style={{ color: '#6b5335' }}>{children}</strong>,
-              em: ({ children }: any) => <em className="pixel-font italic">{children}</em>,
-              ul: ({ children }: any) => <ul className="pixel-font list-disc list-inside mb-3 space-y-1 ml-4">{children}</ul>,
-              ol: ({ children }: any) => <ol className="pixel-font list-decimal list-inside mb-3 space-y-1 ml-4">{children}</ol>,
-              li: ({ children }: any) => <li className="pixel-font" style={{ color: '#6b5335' }}>{children}</li>,
-              code: ({ children }: any) => <code className="pixel-font px-1.5 py-0.5 text-sm font-mono pixel-wooden-card" style={{ color: '#6b5335' }}>{children}</code>,
+              h1: ({ children }: { children?: ReactNode }) => <h1 className="pixel-font text-xl font-semibold mb-3 mt-4" style={{ color: '#6b5335' }}>{children}</h1>,
+              h2: ({ children }: { children?: ReactNode }) => <h2 className="pixel-font text-lg font-semibold mb-2 mt-3" style={{ color: '#6b5335' }}>{children}</h2>,
+              h3: ({ children }: { children?: ReactNode }) => <h3 className="pixel-font text-base font-semibold mb-2 mt-2" style={{ color: '#6b5335' }}>{children}</h3>,
+              p: ({ children }: { children?: ReactNode }) => <p className="pixel-font mb-3" style={{ color: '#6b5335' }}>{children}</p>,
+              strong: ({ children }: { children?: ReactNode }) => <strong className="pixel-font font-semibold" style={{ color: '#6b5335' }}>{children}</strong>,
+              em: ({ children }: { children?: ReactNode }) => <em className="pixel-font italic">{children}</em>,
+              ul: ({ children }: { children?: ReactNode }) => <ul className="pixel-font list-disc list-inside mb-3 space-y-1 ml-4">{children}</ul>,
+              ol: ({ children }: { children?: ReactNode }) => <ol className="pixel-font list-decimal list-inside mb-3 space-y-1 ml-4">{children}</ol>,
+              li: ({ children }: { children?: ReactNode }) => <li className="pixel-font" style={{ color: '#6b5335' }}>{children}</li>,
+              code: ({ children }: { children?: ReactNode }) => <code className="pixel-font px-1.5 py-0.5 text-sm font-mono pixel-wooden-card" style={{ color: '#6b5335' }}>{children}</code>,
             } as Components}
           >
             {step.detail}

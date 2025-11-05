@@ -99,24 +99,6 @@ export default function ClientBadgesPage() {
     };
   }, []);
 
-  // 数字转中文汉字
-  function numberToChinese(num: number): string {
-    const chineseNumbers = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
-    if (num >= 1 && num <= 10) {
-      return chineseNumbers[num];
-    }
-    if (num > 10 && num <= 99) {
-      const tens = Math.floor(num / 10);
-      const ones = num % 10;
-      if (ones === 0) {
-        return chineseNumbers[tens] + '十';
-      }
-      return chineseNumbers[tens] + '十' + chineseNumbers[ones];
-    }
-    // 如果超过99，返回数字本身
-    return String(num);
-  }
-
   const formatDate = (dateStr: string) => {
     try {
       const d = new Date(dateStr);
