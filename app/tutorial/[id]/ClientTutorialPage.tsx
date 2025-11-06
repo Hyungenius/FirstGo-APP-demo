@@ -7,6 +7,7 @@ import TutorialProgress from "@/components/TutorialProgress";
 import SwipeableStep from "@/components/SwipeableStep";
 import ModalDetail from "@/components/ModalDetail";
 import StepDetailContent from "@/components/StepDetailContent";
+import TutorialSkeleton from "@/components/TutorialSkeleton";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 
 interface Step {
@@ -148,7 +149,7 @@ export default function ClientTutorialPage({ tutorialId }: { tutorialId: string 
   }
 
   if (loading) {
-    return <div className="p-6 pixel-font" style={{ backgroundColor: '#f5f0e8', color: '#6b5335' }}>加载中...</div>;
+    return <TutorialSkeleton />;
   }
   if (error) {
     return <div className="p-6 pixel-font" style={{ backgroundColor: '#f5f0e8', color: '#8b0000' }}>{error}</div>;
@@ -161,9 +162,22 @@ export default function ClientTutorialPage({ tutorialId }: { tutorialId: string 
         {/* 返回按钮 */}
         <Link
           href="/"
-          className="mb-4 inline-block pixel-wooden-button text-sm"
+          className="mb-4 inline-flex items-center gap-2 pixel-wooden-button text-sm"
         >
-          ← 返回首页
+          <img 
+            src="/assets/return.png" 
+            alt="返回" 
+            className="pixel-image"
+            style={{ 
+              width: 'auto',
+              height: 'auto',
+              maxWidth: '20px',
+              maxHeight: '20px',
+              objectFit: 'contain',
+              imageRendering: 'pixelated'
+            }}
+          />
+          返回首页
         </Link>
 
         {/* 标题 */}

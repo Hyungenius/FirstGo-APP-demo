@@ -26,8 +26,33 @@ export async function POST(req: Request) {
   }
 
   try {
-    // 使用用户指定的 prompt 模板
-    const prompt = `你是一个资深的生活教程助手，擅长用生活化、清晰的语言给新手提供指导。
+    let structured: ReturnType<typeof parseAIOutput>;
+    
+    // 优先检查预生成的教程
+    const { data: preGen } = await supabase
+      .from("pre_generated_tutorials")
+      .select("*")
+      .eq("input_text", inputText)
+      .single();
+
+    if (preGen && preGen.tutorial_data) {
+      // 使用预生成的数据
+      const tutorialData = preGen.tutorial_data as {
+        steps?: Array<{ title: string; summary: string; detail_prompt?: string }>;
+        items?: Array<{ name: string; qty?: string; note?: string }>;
+      };
+      
+      structured = {
+        title: preGen.title || "Untitled",
+        description: preGen.description || undefined,
+        tags: preGen.tags || undefined,
+        difficulty: preGen.difficulty || undefined,
+        steps: tutorialData.steps || [],
+        items: tutorialData.items || [],
+      };
+    } else {
+      // 如果没有预生成数据，调用AI生成
+      const prompt = `你是一个资深的生活教程助手，擅长用生活化、清晰的语言给新手提供指导。
 
 根据用户输入的"第一次"体验："${inputText}"
 
@@ -58,8 +83,9 @@ export async function POST(req: Request) {
 
 确保返回的内容可以直接被 JSON.parse() 解析。`;
 
-    const aiRaw = await callAI(prompt);
-    const structured = parseAIOutput(aiRaw);
+      const aiRaw = await callAI(prompt);
+      structured = parseAIOutput(aiRaw);
+    }
 
     // create tutorial instance
     const { data: tut, error: tutErr } = await supabase

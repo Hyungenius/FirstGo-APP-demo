@@ -51,8 +51,12 @@ function getEmojiForTutorial(inputText: string | null | undefined): string {
     return "🛒";
   }
   // 音乐相关
-  if (lowerText.includes("音乐") || lowerText.includes("唱歌") || lowerText.includes("演奏")) {
+  if (lowerText.includes("音乐") || lowerText.includes("演奏")) {
     return "🎵";
+  }
+  // 唱歌相关
+  if (lowerText.includes("唱歌") || lowerText.includes("学唱歌") || lowerText.includes("唱歌课") || lowerText.includes("声乐")) {
+    return "🎤";
   }
   // 艺术相关
   if (lowerText.includes("绘画") || lowerText.includes("画画") || lowerText.includes("艺术")) {
@@ -69,6 +73,52 @@ function getEmojiForTutorial(inputText: string | null | undefined): string {
   
   // 默认返回奖杯
   return "🏅";
+}
+
+// 判断是否是游泳相关的教程
+function isSwimmingRelated(inputText: string | null | undefined): boolean {
+  if (!inputText) return false;
+  
+  const lowerText = inputText.toLowerCase();
+  return lowerText.includes("游泳") || 
+         lowerText.includes("学游泳") || 
+         lowerText.includes("游泳课") ||
+         lowerText.includes("游泳训练");
+}
+
+// 判断是否是唱歌相关的教程
+function isSingingRelated(inputText: string | null | undefined): boolean {
+  if (!inputText) return false;
+  
+  const lowerText = inputText.toLowerCase();
+  return lowerText.includes("唱歌") || 
+         lowerText.includes("学唱歌") || 
+         lowerText.includes("唱歌课") ||
+         lowerText.includes("声乐");
+}
+
+// 判断是否是画画相关的教程
+function isPaintingRelated(inputText: string | null | undefined): boolean {
+  if (!inputText) return false;
+  
+  const lowerText = inputText.toLowerCase();
+  return lowerText.includes("绘画") || 
+         lowerText.includes("画画") || 
+         lowerText.includes("艺术");
+}
+
+// 根据教程标题获取对应的动画视频路径
+function getAnimationVideo(inputText: string | null | undefined): string {
+  if (isSwimmingRelated(inputText)) {
+    return "/assets/swim.mp4";
+  }
+  if (isSingingRelated(inputText)) {
+    return "/assets/sing.mp4";
+  }
+  if (isPaintingRelated(inputText)) {
+    return "/assets/paint.mp4";
+  }
+  return "/assets/xunzhang.mov";
 }
 
 export default function ClientBadgesPage() {
@@ -128,8 +178,21 @@ export default function ClientBadgesPage() {
         <h1 className="pixel-font text-2xl font-medium" style={{ color: '#6b5335' }}>勋章墙</h1>
         <Link
           href="/"
-          className="pixel-wooden-button px-3 py-2 text-sm"
+          className="inline-flex items-center gap-2 pixel-wooden-button px-3 py-2 text-sm"
         >
+          <img 
+            src="/assets/return.png" 
+            alt="返回" 
+            className="pixel-image"
+            style={{ 
+              width: 'auto',
+              height: 'auto',
+              maxWidth: '20px',
+              maxHeight: '20px',
+              objectFit: 'contain',
+              imageRendering: 'pixelated'
+            }}
+          />
           返回首页
         </Link>
       </div>
@@ -166,7 +229,7 @@ export default function ClientBadgesPage() {
                 {isPlaying ? (
                   <div className="mb-2 w-full">
                     <video
-                      src="/assets/xunzhang.mov"
+                      src={getAnimationVideo(inputText)}
                       autoPlay
                       loop
                       muted

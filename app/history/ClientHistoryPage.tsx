@@ -63,8 +63,21 @@ export default function ClientHistoryPage() {
         <h1 className="pixel-font text-2xl font-medium" style={{ color: '#6b5335' }}>历史记录</h1>
         <Link
           href="/"
-          className="pixel-wooden-button px-3 py-2 text-sm"
+          className="inline-flex items-center gap-2 pixel-wooden-button px-3 py-2 text-sm"
         >
+          <img 
+            src="/assets/return.png" 
+            alt="返回" 
+            className="pixel-image"
+            style={{ 
+              width: 'auto',
+              height: 'auto',
+              maxWidth: '20px',
+              maxHeight: '20px',
+              objectFit: 'contain',
+              imageRendering: 'pixelated'
+            }}
+          />
           返回首页
         </Link>
       </div>

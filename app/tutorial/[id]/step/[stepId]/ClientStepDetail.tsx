@@ -109,9 +109,22 @@ export default function ClientStepDetail({ tutorialId, stepId }: { tutorialId: s
     <div className="mx-auto w-full max-w-2xl p-6 pixel-font" style={{ backgroundColor: '#f5f0e8', minHeight: '100vh' }}>
       <Link
         href={`/tutorial/${tutorialId}`}
-        className="mb-4 inline-block pixel-wooden-button text-sm"
+        className="mb-4 inline-flex items-center gap-2 pixel-wooden-button text-sm"
       >
-        ← 返回教程
+        <img 
+          src="/assets/return.png" 
+          alt="返回" 
+          className="pixel-image"
+          style={{ 
+            width: 'auto',
+            height: 'auto',
+            maxWidth: '20px',
+            maxHeight: '20px',
+            objectFit: 'contain',
+            imageRendering: 'pixelated'
+          }}
+        />
+        返回教程
       </Link>
       <div className="pixel-wooden-container p-6">
         <div className="pixel-font mb-2 text-sm" style={{ color: '#8b6f47' }}>步骤 {step.ord}</div>
