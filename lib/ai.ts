@@ -21,20 +21,42 @@ export interface AiTutorialStructured {
   difficulty?: string;
 }
 
+/**
+ * 生成教程创建的统一 prompt
+ * 用于生成"第一次"体验的教程内容
+ */
 export function buildTutorialPrompt(inputText: string): string {
   const trimmed = (inputText ?? "").trim();
-  return [
-    "You are an assistant that designs first-time step-by-step tutorials.",
-    "Return STRICT JSON only with keys: title, description, items[], steps[], tags[], difficulty.",
-    "Constraints:",
-    "- steps length should be 6-7",
-    "- each step has title, summary and optional detail_prompt",
-    "- items are concise and practical",
-    "- difficulty in {easy, medium, hard}",
-    "Language: Chinese-Simplified",
-    "User input:",
-    trimmed || "第一次去健身房",
-  ].join("\n");
+  return `你是一个资深的生活教程助手，擅长用生活化、清晰的语言给新手提供指导。
+
+根据用户输入的"第一次"体验："${trimmed}"
+
+请你生成一个**严格的 JSON 对象**，包含以下字段：
+
+1.  "title": (字符串) 一个生活化、清晰的教程标题（对应用户的"总结性大标题"）。
+
+2.  "description": (字符串) 一句概括全流程的鼓励性话语，80字以内（对应用户的"概括说明"）。
+
+3.  "items": (字符串数组) 一个包含 3-5 个**具体、实用**的关键物品的数组。**请务必确保这个数组不是空的，并且每个物品都是一个字符串。**
+
+4.  "steps": (对象数组) 一个包含 6-7 个步骤的**对象数组**（对应用户的"分点攻略"）。
+    * 每个对象必须包含两个键：\`"title"\` (步骤标题，不需要再有第几步) 和 \`"summary"\` (该步骤的简介，80字以内)。
+
+5.  "tags": (字符串数组) 3 个相关的标签。
+
+6.  "difficulty": (数字) 1-5 之间的难度数字。
+
+请确保你的回答**只有**这个 JSON 对象，不要有任何其他文字或 Markdown 标记。
+
+重要约束：
+
+请你只返回一个 RFC 8259 兼容的 JSON 格式的字符串。
+
+不要包含任何 JSON 之外的解释性文字、开场白（例如"好的，这是您要的..."）或结束语。
+
+不要使用 Markdown 语法（例如 \`\`\`json ... \`\`\`）。
+
+确保返回的内容可以直接被 JSON.parse() 解析。`;
 }
 
 interface RawAIResponse {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
@@ -60,38 +60,67 @@ export default function ClientStepDetail({ tutorialId, stepId }: { tutorialId: s
     };
   }, [tutorialId, stepId]);
 
+  // 使用 ref 跟踪取消状态，避免清理函数导致的状态更新问题
+  const cancelledRef = useRef(false);
+  
   // 如果没有 detail，尝试生成
   useEffect(() => {
     if (loading || !step || step.detail || generating) return;
-    let cancelled = false;
-    (async () => {
+    
+    // 重置取消标志
+    cancelledRef.current = false;
+    
+    const handleGenerateDetail = async () => {
       setGenerating(true);
+      setError(null);
+      
       try {
-        const res = await fetch(`/api/tutorials/${tutorialId}/steps/${stepId}/generate-detail`, {
+        // 调用生成详细教程的 API
+        const response = await fetch(`/api/tutorials/${tutorialId}/steps/${stepId}/generate-detail`, {
           method: "POST",
           credentials: "include",
           cache: "no-store",
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data?.error || "生成失败");
-        if (cancelled) return;
-        // 立即更新 step 状态，确保界面立即刷新
-        const newDetail = data.detail || null;
-        setStep((prev) => {
-          if (!prev) return null;
-          return { ...prev, detail: newDetail };
-        });
-        setGenerating(false);
+        
+        // 确保正确 await 响应
+        const responseData = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(responseData?.error || `生成失败（${response.status}）`);
+        }
+        
+        // 检查是否已取消（使用 ref，这样即使组件重新渲染也能正确判断）
+        if (cancelledRef.current) {
+          return;
+        }
+        
+        // 立即使用返回的 JSON 数据更新本地状态
+        const newDetail = responseData.detail || null;
+        if (newDetail) {
+          setStep((prev) => {
+            if (!prev) return null;
+            return { ...prev, detail: newDetail };
+          });
+        }
       } catch (e) {
-        const errorMessage = e instanceof Error ? e.message : "生成详细说明失败";
-        if (!cancelled) setError(errorMessage);
-        if (!cancelled) setGenerating(false);
+        if (!cancelledRef.current) {
+          const errorMessage = e instanceof Error ? e.message : "生成详细说明失败";
+          setError(errorMessage);
+        }
+      } finally {
+        // 最重要的：在所有操作完成后（无论成功还是失败），必须设置 setIsLoading(false)
+        if (!cancelledRef.current) {
+          setGenerating(false);
+        }
       }
-    })();
-    return () => {
-      cancelled = true;
     };
-  }, [step, tutorialId, stepId, loading, generating]);
+    
+    handleGenerateDetail();
+    
+    return () => {
+      cancelledRef.current = true;
+    };
+  }, [tutorialId, stepId, loading, generating, step?.detail]); // 只依赖 step.detail，而不是整个 step 对象
 
   if (loading) {
     return (

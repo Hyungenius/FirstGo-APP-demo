@@ -65,7 +65,7 @@ export default function ModalDetail({ isOpen, onClose, title, children }: Props)
         {title && (
           <h2 className="pixel-font mb-4 pr-8 text-xl font-medium" style={{ color: '#6b5335' }}>{title}</h2>
         )}
-        <div className="pixel-font max-h-[70vh] overflow-y-auto">{children}</div>
+        <div className="pixel-font max-h-[70vh] overflow-y-auto" style={{ paddingRight: '8px' }}>{children}</div>
       </div>
       <style jsx>{`
         @keyframes fadeIn {

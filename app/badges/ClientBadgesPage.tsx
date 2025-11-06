@@ -165,10 +165,45 @@ export default function ClientBadgesPage() {
     return <div className="p-6 pixel-font" style={{ backgroundColor: '#f5f0e8', color: '#8b0000' }}>{error}</div>;
   }
 
-  // 按获取时间排序，计算每个勋章的序号
-  const sortedBadges = [...badges].sort((a, b) => {
-    const dateA = new Date(a.awarded_at).getTime();
-    const dateB = new Date(b.awarded_at).getTime();
+  // 按 input_text 合并相同的教程，统计完成次数
+  interface MergedBadge {
+    inputText: string;
+    count: number;
+    firstAwardedAt: string; // 第一次完成的时间
+    badgeIds: string[]; // 用于视频播放的唯一标识
+    representativeBadge: Badge; // 代表勋章（用于获取emoji等）
+  }
+
+  const mergedBadgesMap = new Map<string, MergedBadge>();
+
+  badges.forEach((item) => {
+    const inputText = item.tutorial_instances?.input_text || "完成教程";
+    
+    if (mergedBadgesMap.has(inputText)) {
+      const existing = mergedBadgesMap.get(inputText)!;
+      existing.count += 1;
+      existing.badgeIds.push(item.id);
+      // 如果这个时间更早，更新第一次完成时间
+      const currentTime = new Date(item.awarded_at).getTime();
+      const firstTime = new Date(existing.firstAwardedAt).getTime();
+      if (currentTime < firstTime) {
+        existing.firstAwardedAt = item.awarded_at;
+      }
+    } else {
+      mergedBadgesMap.set(inputText, {
+        inputText,
+        count: 1,
+        firstAwardedAt: item.awarded_at,
+        badgeIds: [item.id],
+        representativeBadge: item,
+      });
+    }
+  });
+
+  // 转换为数组并按第一次完成时间排序
+  const mergedBadges = Array.from(mergedBadgesMap.values()).sort((a, b) => {
+    const dateA = new Date(a.firstAwardedAt).getTime();
+    const dateB = new Date(b.firstAwardedAt).getTime();
     return dateA - dateB;
   });
 
@@ -196,7 +231,7 @@ export default function ClientBadgesPage() {
           返回首页
         </Link>
       </div>
-      {badges.length === 0 ? (
+      {mergedBadges.length === 0 ? (
         <div className="pixel-wooden-container p-8 text-center">
           <p className="pixel-font" style={{ color: '#6b5335' }}>还没有获得勋章，完成教程后可以获得勋章！</p>
           <Link
@@ -208,21 +243,22 @@ export default function ClientBadgesPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {sortedBadges.map((item, index) => {
-            const inputText = item.tutorial_instances?.input_text || "完成教程";
+          {mergedBadges.map((merged, index) => {
+            const inputText = merged.inputText;
             const emoji = getEmojiForTutorial(inputText);
-            const isPlaying = playingVideoId === item.id;
-            const tutorialNumber = index + 1; // 第几个教程（从1开始）
+            // 使用第一个 badgeId 作为播放标识
+            const videoKey = `${inputText}-${merged.badgeIds[0]}`;
+            const isPlaying = playingVideoId === videoKey;
             
             return (
               <div
-                key={item.id}
+                key={inputText}
                 className="relative pixel-wooden-card p-4 text-center cursor-pointer transition-transform hover:scale-105"
                 onClick={() => {
                   if (isPlaying) {
                     setPlayingVideoId(null);
                   } else {
-                    setPlayingVideoId(item.id);
+                    setPlayingVideoId(videoKey);
                   }
                 }}
               >
@@ -251,10 +287,10 @@ export default function ClientBadgesPage() {
                   {inputText}
                 </h3>
                 <p className="pixel-font mb-2 text-sm" style={{ color: '#6b5335' }}>
-                  完成了第{tutorialNumber}个教程
+                  已完成 {merged.count} 次
                 </p>
                 <div className="pixel-font text-xs" style={{ color: '#8b6f47' }}>
-                  获得于 {formatDate(item.awarded_at)}
+                  首次完成于 {formatDate(merged.firstAwardedAt)}
                 </div>
                 {!isPlaying && (
                   <div className="pixel-font mt-2 text-xs" style={{ color: '#8b6f47' }}>
