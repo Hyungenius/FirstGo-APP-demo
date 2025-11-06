@@ -138,8 +138,12 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: "activities array is required" }, { status: 400 });
   }
 
-  const results = [];
-  const errors = [];
+  type BatchResult = 
+    | { activity: string; status: "success"; result: Awaited<ReturnType<typeof preGenerateSingle>> }
+    | { activity: string; status: "error"; error: string };
+
+  const results: BatchResult[] = [];
+  const errors: BatchResult[] = [];
 
   // 分批处理所有活动（限制并发数以避免过载）
   const batchSize = 3; // 每次处理3个活动

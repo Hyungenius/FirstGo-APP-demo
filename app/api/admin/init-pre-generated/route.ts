@@ -9,7 +9,7 @@ import { callAI, parseAIOutput } from "@/lib/ai";
  * 注意：这个API会调用AI API，建议只在部署时或手动触发一次
  * 推荐使用脚本：scripts/init-pre-generated-tutorials.ts
  */
-export async function POST(req: Request) {
+export async function POST(_req: Request) {
   const supabase = await getServerSupabase();
 
   // 可选：验证管理员权限
@@ -25,7 +25,12 @@ export async function POST(req: Request) {
     "画画", "唱歌", "读书", "拼豆"
   ];
 
-  async function preGenerateSingle(inputText: string) {
+  type PreGenResult = 
+    | { success: true; skipped: true; input_text: string; title: string }
+    | { success: true; skipped: false; input_text: string; title: string; id: string }
+    | { success: false; input_text: string; error: string };
+
+  async function preGenerateSingle(inputText: string): Promise<PreGenResult> {
     // 检查是否已经存在
     const { data: existing } = await supabase
       .from("pre_generated_tutorials")
@@ -105,8 +110,8 @@ export async function POST(req: Request) {
     }
   }
 
-  const results = [];
-  const errors = [];
+  const results: PreGenResult[] = [];
+  const errors: PreGenResult[] = [];
 
   // 分批处理，每次3个
   const batchSize = 3;
@@ -132,8 +137,8 @@ export async function POST(req: Request) {
   return NextResponse.json({
     success: true,
     total: activities.length,
-    generated: results.filter((r) => !r.skipped).length,
-    skipped: results.filter((r) => r.skipped).length,
+    generated: results.filter((r) => r.success && !r.skipped).length,
+    skipped: results.filter((r) => r.success && r.skipped).length,
     failed: errors.length,
     results,
     errors,

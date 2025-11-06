@@ -38,7 +38,12 @@ const activities = [
   "画画", "唱歌", "读书", "拼豆"
 ];
 
-async function preGenerateSingle(inputText: string) {
+type PreGenResult = 
+  | { success: true; skipped: true; input_text: string }
+  | { success: true; skipped: false; input_text: string; id: string }
+  | { success: false; input_text: string; error: string };
+
+async function preGenerateSingle(inputText: string): Promise<PreGenResult> {
   console.log(`\n处理活动: "${inputText}"`);
 
   // 检查是否已经存在
@@ -131,8 +136,8 @@ async function main() {
   console.log(`活动数量: ${activities.length}`);
   console.log(`活动列表: ${activities.join(", ")}`);
 
-  const results = [];
-  const errors = [];
+  const results: PreGenResult[] = [];
+  const errors: PreGenResult[] = [];
 
   // 分批处理，每次3个
   const batchSize = 3;
@@ -161,13 +166,15 @@ async function main() {
   console.log("\n" + "=".repeat(60));
   console.log("完成统计:");
   console.log(`  成功: ${results.length}`);
-  console.log(`  跳过（已存在）: ${results.filter((r) => r.skipped).length}`);
-  console.log(`  新生成: ${results.filter((r) => !r.skipped).length}`);
+  console.log(`  跳过（已存在）: ${results.filter((r) => r.success && r.skipped).length}`);
+  console.log(`  新生成: ${results.filter((r) => r.success && !r.skipped).length}`);
   console.log(`  失败: ${errors.length}`);
   if (errors.length > 0) {
     console.log("\n失败的活动:");
     errors.forEach((e) => {
-      console.log(`  - ${e.input_text}: ${e.error}`);
+      if (!e.success) {
+        console.log(`  - ${e.input_text}: ${e.error}`);
+      }
     });
   }
   console.log("=".repeat(60));
