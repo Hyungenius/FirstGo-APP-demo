@@ -35,6 +35,11 @@ export default function ClientTutorialPage({ tutorialId }: { tutorialId: string 
   const [openStepId, setOpenStepId] = useState<string | null>(null);
   const pendingSetRef = useRef<Set<string>>(new Set());
   const timersRef = useRef<Record<string, NodeJS.Timeout>>({});
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const longPressProgressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [isLongPressing, setIsLongPressing] = useState(false);
+  const [longPressProgress, setLongPressProgress] = useState(0);
+  const longPressStartTimeRef = useRef<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -133,6 +138,18 @@ export default function ClientTutorialPage({ tutorialId }: { tutorialId: string 
     const firstIncomplete = steps.find(s => !s.completed);
     setActiveStepId(firstIncomplete?.id || steps[steps.length - 1]?.id || null);
   }, [steps]);
+
+  // 清理长按定时器
+  useEffect(() => {
+    return () => {
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+      }
+      if (longPressProgressIntervalRef.current) {
+        clearInterval(longPressProgressIntervalRef.current);
+      }
+    };
+  }, []);
 
   function isPending(stepId: string) {
     return pendingSetRef.current.has(stepId);
@@ -316,48 +333,141 @@ export default function ClientTutorialPage({ tutorialId }: { tutorialId: string 
         </div>
 
         {/* 完成按钮 */}
-        <button
-          className="w-full pixel-wooden-button px-4 py-3 text-base font-medium"
-          onClick={async () => {
-            try {
-              // 先完成所有未完成的步骤
-              const incompleteSteps = steps.filter(s => !s.completed);
-              for (const step of incompleteSteps) {
-                try {
-                  // 乐观更新
-                  setSteps((prev) => prev.map((p) => (p.id === step.id ? { ...p, completed: true } : p)));
-                  pendingSetRef.current.add(step.id);
-                  
-                  const res = await fetch(`/api/tutorials/${tutorialId}/steps/${step.id}/complete`, {
-                    method: "PATCH",
-                    headers: { "Content-Type": "application/json" },
-                    credentials: "include",
-                    body: JSON.stringify({ completed: true }),
-                  });
-                  if (!res.ok) throw new Error("更新失败");
-                  
-                  pendingSetRef.current.delete(step.id);
-                } catch {
-                  // 回滚失败的步骤
-                  setSteps((prev) => prev.map((p) => (p.id === step.id ? { ...p, completed: false } : p)));
-                  pendingSetRef.current.delete(step.id);
+        <div className="relative">
+          <button
+            className="w-full pixel-wooden-button px-4 py-3 text-base font-medium relative overflow-hidden"
+            onPointerDown={(e) => {
+              // 如果已经全部完成，不处理长按
+              if (allDone) return;
+              
+              setIsLongPressing(true);
+              setLongPressProgress(0);
+              longPressStartTimeRef.current = Date.now();
+              
+              // 更新进度
+              longPressProgressIntervalRef.current = setInterval(() => {
+                if (longPressStartTimeRef.current) {
+                  const elapsed = Date.now() - longPressStartTimeRef.current;
+                  const progress = Math.min((elapsed / 1000) * 100, 100);
+                  setLongPressProgress(progress);
                 }
+              }, 50);
+              
+              // 长按1秒后触发
+              longPressTimerRef.current = setTimeout(async () => {
+                if (longPressProgressIntervalRef.current) {
+                  clearInterval(longPressProgressIntervalRef.current);
+                  longPressProgressIntervalRef.current = null;
+                }
+                try {
+                  // 批量完成所有未完成的步骤（不触发动画）
+                  const incompleteSteps = steps.filter(s => !s.completed);
+                  
+                  // 直接更新所有步骤状态
+                  setSteps((prev) => 
+                    prev.map((p) => 
+                      incompleteSteps.some(s => s.id === p.id) 
+                        ? { ...p, completed: true } 
+                        : p
+                    )
+                  );
+                  
+                  // 批量请求完成所有步骤
+                  const promises = incompleteSteps.map(async (step) => {
+                    try {
+                      const res = await fetch(`/api/tutorials/${tutorialId}/steps/${step.id}/complete`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        credentials: "include",
+                        body: JSON.stringify({ completed: true }),
+                      });
+                      if (!res.ok) throw new Error("更新失败");
+                    } catch {
+                      // 回滚失败的步骤
+                      setSteps((prev) => prev.map((p) => (p.id === step.id ? { ...p, completed: false } : p)));
+                    }
+                  });
+                  
+                  await Promise.all(promises);
+                  
+                  // 然后完成教程
+                  const res = await fetch(`/api/tutorials/${tutorialId}/complete`, {
+                    method: "PATCH",
+                    credentials: "include",
+                  });
+                  if (!res.ok) throw new Error("完成失败");
+                  router.push(`/tutorial/${tutorialId}/complete`);
+                } catch {
+                  // 忽略错误
+                } finally {
+                  setIsLongPressing(false);
+                  setLongPressProgress(0);
+                  longPressStartTimeRef.current = null;
+                }
+              }, 1000);
+            }}
+            onPointerUp={() => {
+              if (longPressTimerRef.current) {
+                clearTimeout(longPressTimerRef.current);
+                longPressTimerRef.current = null;
+              }
+              if (longPressProgressIntervalRef.current) {
+                clearInterval(longPressProgressIntervalRef.current);
+                longPressProgressIntervalRef.current = null;
+              }
+              setIsLongPressing(false);
+              setLongPressProgress(0);
+              longPressStartTimeRef.current = null;
+            }}
+            onPointerCancel={() => {
+              if (longPressTimerRef.current) {
+                clearTimeout(longPressTimerRef.current);
+                longPressTimerRef.current = null;
+              }
+              if (longPressProgressIntervalRef.current) {
+                clearInterval(longPressProgressIntervalRef.current);
+                longPressProgressIntervalRef.current = null;
+              }
+              setIsLongPressing(false);
+              setLongPressProgress(0);
+              longPressStartTimeRef.current = null;
+            }}
+            onClick={async (e) => {
+              // 如果正在长按，阻止点击事件
+              if (isLongPressing) {
+                e.preventDefault();
+                return;
               }
               
-              // 然后完成教程
-              const res = await fetch(`/api/tutorials/${tutorialId}/complete`, {
-                method: "PATCH",
-                credentials: "include",
-              });
-              if (!res.ok) throw new Error("完成失败");
-              router.push(`/tutorial/${tutorialId}/complete`);
-            } catch {
-              // 忽略错误，已显示在 UI
-            }
-          }}
-        >
-          {allDone ? "已全部完成" : "完成教程"}
-        </button>
+              // 如果已经全部完成，直接跳转
+              if (allDone) {
+                try {
+                  const res = await fetch(`/api/tutorials/${tutorialId}/complete`, {
+                    method: "PATCH",
+                    credentials: "include",
+                  });
+                  if (!res.ok) throw new Error("完成失败");
+                  router.push(`/tutorial/${tutorialId}/complete`);
+                } catch {
+                  // 忽略错误
+                }
+              }
+            }}
+          >
+            <span className="relative z-10">
+              {allDone ? "已全部完成" : isLongPressing ? "长按完成中..." : "长按一键完成"}
+            </span>
+            {isLongPressing && !allDone && (
+              <div 
+                className="absolute inset-0 bg-opacity-30 transition-all duration-75 ease-linear"
+                style={{ 
+                  width: `${longPressProgress}%`,
+                  backgroundColor: 'rgba(139, 111, 71, 0.3)'
+                }}
+              />
+            )}
+          </button>
+        </div>
       </div>
 
       {openStepId && (
