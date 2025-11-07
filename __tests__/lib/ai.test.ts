@@ -21,7 +21,7 @@ describe("lib/ai", () => {
       const prompt = buildTutorialPrompt("第一次去健身房");
       expect(prompt).toContain("第一次去健身房");
       expect(prompt).toContain("JSON");
-      expect(prompt).toContain("steps length should be 6-7");
+      expect(prompt).toContain("6-7 个步骤");
     });
 
     it("应该处理空字符串", () => {
