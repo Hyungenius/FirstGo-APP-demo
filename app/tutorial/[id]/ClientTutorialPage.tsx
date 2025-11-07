@@ -317,10 +317,34 @@ export default function ClientTutorialPage({ tutorialId }: { tutorialId: string 
 
         {/* 完成按钮 */}
         <button
-          className="w-full pixel-wooden-button px-4 py-3 text-base font-medium disabled:opacity-50"
-          disabled={!allDone}
+          className="w-full pixel-wooden-button px-4 py-3 text-base font-medium"
           onClick={async () => {
             try {
+              // 先完成所有未完成的步骤
+              const incompleteSteps = steps.filter(s => !s.completed);
+              for (const step of incompleteSteps) {
+                try {
+                  // 乐观更新
+                  setSteps((prev) => prev.map((p) => (p.id === step.id ? { ...p, completed: true } : p)));
+                  pendingSetRef.current.add(step.id);
+                  
+                  const res = await fetch(`/api/tutorials/${tutorialId}/steps/${step.id}/complete`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify({ completed: true }),
+                  });
+                  if (!res.ok) throw new Error("更新失败");
+                  
+                  pendingSetRef.current.delete(step.id);
+                } catch {
+                  // 回滚失败的步骤
+                  setSteps((prev) => prev.map((p) => (p.id === step.id ? { ...p, completed: false } : p)));
+                  pendingSetRef.current.delete(step.id);
+                }
+              }
+              
+              // 然后完成教程
               const res = await fetch(`/api/tutorials/${tutorialId}/complete`, {
                 method: "PATCH",
                 credentials: "include",
@@ -332,7 +356,7 @@ export default function ClientTutorialPage({ tutorialId }: { tutorialId: string 
             }
           }}
         >
-          已全部完成
+          {allDone ? "已全部完成" : "完成教程"}
         </button>
       </div>
 
