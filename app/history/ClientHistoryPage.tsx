@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import SwipeableHistoryItem from "@/components/SwipeableHistoryItem";
+import HistoryItem from "@/components/HistoryItem";
 
 interface TutorialItem {
   id: string;
@@ -20,6 +20,7 @@ export default function ClientHistoryPage() {
   const [error, setError] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -96,25 +97,36 @@ export default function ClientHistoryPage() {
     <div className="mx-auto w-full max-w-3xl p-6 pixel-font" style={{ minHeight: '100vh', backgroundColor: '#f5f0e8' }}>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="pixel-font text-2xl font-medium" style={{ color: '#6b5335' }}>历史记录</h1>
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 pixel-wooden-button px-3 py-2 text-sm"
-        >
-          <img 
-            src="/assets/return.png" 
-            alt="返回" 
-            className="pixel-image"
-            style={{ 
-              width: 'auto',
-              height: 'auto',
-              maxWidth: '20px',
-              maxHeight: '20px',
-              objectFit: 'contain',
-              imageRendering: 'pixelated'
-            }}
-          />
-          返回首页
-        </Link>
+        <div className="flex items-center gap-2">
+          {/* 编辑/完成按钮 */}
+          {items.length > 0 && (
+            <button
+              onClick={() => setIsEditMode(!isEditMode)}
+              className="pixel-wooden-button px-3 py-2 text-sm"
+            >
+              {isEditMode ? "完成" : "编辑"}
+            </button>
+          )}
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 pixel-wooden-button px-3 py-2 text-sm"
+          >
+            <img 
+              src="/assets/return.png" 
+              alt="返回" 
+              className="pixel-image"
+              style={{ 
+                width: 'auto',
+                height: 'auto',
+                maxWidth: '20px',
+                maxHeight: '20px',
+                objectFit: 'contain',
+                imageRendering: 'pixelated'
+              }}
+            />
+            返回首页
+          </Link>
+        </div>
       </div>
       {items.length === 0 ? (
         <div className="pixel-wooden-container p-8 text-center">
@@ -128,13 +140,23 @@ export default function ClientHistoryPage() {
         </div>
       ) : (
         <>
+          {/* 编辑模式提示 */}
+          {isEditMode && (
+            <div className="mb-4 pixel-wooden-card p-3 text-center" style={{ backgroundColor: '#fff3cd' }}>
+              <p className="pixel-font text-sm" style={{ color: '#6b5335' }}>
+                编辑模式：点击记录右上角的 🗑️ 按钮可以删除
+              </p>
+            </div>
+          )}
+          
           <div className="grid grid-cols-1 gap-4">
             {items.map((item) => (
-              <SwipeableHistoryItem
+              <HistoryItem
                 key={item.id}
                 item={item}
                 onDelete={handleDelete}
                 formatDate={formatDate}
+                isEditMode={isEditMode}
               />
             ))}
           </div>
@@ -142,13 +164,20 @@ export default function ClientHistoryPage() {
           {/* 删除确认对话框 - 居中显示 */}
           {deleteConfirmId && (
             <div 
-              className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
               onClick={cancelDelete}
+              style={{ 
+                backgroundColor: 'rgba(107, 83, 53, 0.4)',
+                animation: 'fadeIn 0.2s ease-out'
+              }}
             >
               <div 
                 className="pixel-wooden-container p-6 w-full max-w-md"
                 onClick={(e) => e.stopPropagation()}
-                style={{ backgroundColor: '#faf5ed' }}
+                style={{ 
+                  backgroundColor: '#faf5ed',
+                  animation: 'slideUp 0.2s ease-out'
+                }}
               >
                 <h3 className="pixel-font text-lg font-medium mb-4" style={{ color: '#6b5335' }}>
                   确认删除
