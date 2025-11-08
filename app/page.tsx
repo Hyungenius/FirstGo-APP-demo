@@ -14,6 +14,33 @@ export default function Home() {
   const [initialValue, setInitialValue] = useState<string>("");
   const inputRef = useRef<InputFirstThingRef | null>(null);
   
+  // 所有21个活动
+  const allActivities = [
+    "健身", "做饭", "旅行", "蹦极", "购物", 
+    "开车", "画画", "唱歌", "读书", "拼豆",
+    "潜水", "滑板", "街舞", "跳伞", "泡温泉",
+    "约会", "针织", "冲浪", "爬山", "实习", "游泳"
+  ];
+  
+  // 随机选择10个活动的函数（Fisher-Yates 洗牌算法）
+  const getRandomActivities = (): string[] => {
+    const shuffled = [...allActivities];
+    // Fisher-Yates 洗牌算法
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled.slice(0, 10);
+  };
+  
+  // 状态：当前显示的10个活动
+  const [displayedActivities, setDisplayedActivities] = useState<string[]>(() => getRandomActivities());
+  
+  // 点击骰子按钮，重新随机生成10个活动
+  const handleDiceClick = () => {
+    setDisplayedActivities(getRandomActivities());
+  };
+  
   const handleQuickStart = (text: string) => {
     setInitialValue(text);
     setTimeout(() => {
@@ -21,18 +48,18 @@ export default function Home() {
     }, 100);
   };
   
-  const activities = [
-    "健身",      // 1块
-    "做饭", "旅行",  // 2块
-    "蹦极", "购物", "开车",  // 3块
-    "画画", "唱歌", "读书", "拼豆"  // 4块
-  ];
+  // 将10个活动按照原来的布局方式分组（1、2、3、4块）
+  // 确保有足够的活动，如果不足则用空字符串填充
+  const safeActivities = [...displayedActivities];
+  while (safeActivities.length < 10) {
+    safeActivities.push("");
+  }
   
   const blocks = [
-    { count: 1, activities: [activities[0]] },
-    { count: 2, activities: [activities[1], activities[2]] },
-    { count: 3, activities: [activities[3], activities[4], activities[5]] },
-    { count: 4, activities: [activities[6], activities[7], activities[8], activities[9]] },
+    { count: 1, activities: [safeActivities[0]].filter(a => a) },
+    { count: 2, activities: [safeActivities[1], safeActivities[2]].filter(a => a) },
+    { count: 3, activities: [safeActivities[3], safeActivities[4], safeActivities[5]].filter(a => a) },
+    { count: 4, activities: [safeActivities[6], safeActivities[7], safeActivities[8], safeActivities[9]].filter(a => a) },
   ];
   
   return (
@@ -41,6 +68,25 @@ export default function Home() {
       <div className="relative flex min-h-screen items-center justify-center" style={{ backgroundColor: '#f5f0e8' }}>
         {/* 状态栏 - 显示图标 */}
         <div className="absolute top-0 right-0 flex items-center gap-4 px-4 py-2 z-20">
+          <button
+            onClick={handleDiceClick}
+            className="cursor-pointer transition-transform hover:scale-110 active:scale-95"
+            title="随机生成活动"
+            style={{
+              background: 'none',
+              border: 'none',
+              padding: '4px',
+            }}
+          >
+            <div
+              className="pixel-font text-4xl"
+              style={{
+                filter: 'drop-shadow(2px 2px 4px rgba(0,0,0,0.3))',
+              }}
+            >
+              🎲
+            </div>
+          </button>
           <Link href="/badges" className="cursor-pointer transition-opacity hover:opacity-70">
             <img 
               src="/assets/prize.PNG" 
@@ -134,39 +180,42 @@ export default function Home() {
 
             {/* 右侧：木块堆叠区域（倒转：1、2、3、4块，居中排列） */}
             <div className="flex flex-col items-center gap-1">
-              {blocks.map((block, blockIndex) => (
-                <div key={blockIndex} className="flex gap-1">
-                  {block.activities.map((activity, activityIndex) => (
-                    <div
-                      key={activityIndex}
-                      onClick={() => handleQuickStart(activity)}
-                      className="relative cursor-pointer transition-transform hover:scale-105 active:scale-95"
-                      style={{ position: 'relative' }}
-                    >
-                      <img
-                        src="/assets/wood.PNG"
-                        alt={activity}
-                        className="pixel-image"
-                        style={{
-                          width: '64px',
-                          height: 'auto',
-                          objectFit: 'contain',
-                          imageRendering: 'pixelated'
-                        }}
-                      />
+              {blocks.map((block, blockIndex) => {
+                if (block.activities.length === 0) return null;
+                return (
+                  <div key={blockIndex} className="flex gap-1">
+                    {block.activities.map((activity, activityIndex) => (
                       <div
-                        className="absolute inset-0 flex items-center justify-center pixel-font text-xs font-medium pointer-events-none"
-                        style={{
-                          color: '#6b5335',
-                          textShadow: '1px 1px 2px rgba(255,255,255,0.8), -1px -1px 2px rgba(255,255,255,0.8)'
-                        }}
+                        key={`${blockIndex}-${activityIndex}-${activity}`}
+                        onClick={() => handleQuickStart(activity)}
+                        className="relative cursor-pointer transition-transform hover:scale-105 active:scale-95"
+                        style={{ position: 'relative' }}
                       >
-                        {activity}
+                        <img
+                          src="/assets/wood.PNG"
+                          alt={activity}
+                          className="pixel-image"
+                          style={{
+                            width: '64px',
+                            height: 'auto',
+                            objectFit: 'contain',
+                            imageRendering: 'pixelated'
+                          }}
+                        />
+                        <div
+                          className="absolute inset-0 flex items-center justify-center pixel-font text-xs font-medium pointer-events-none"
+                          style={{
+                            color: '#6b5335',
+                            textShadow: '1px 1px 2px rgba(255,255,255,0.8), -1px -1px 2px rgba(255,255,255,0.8)'
+                          }}
+                        >
+                          {activity}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              ))}
+                    ))}
+                  </div>
+                );
+              })}
             </div>
           </div>
 

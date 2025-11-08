@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import ProgressBarSimple from "@/components/ProgressBarSimple";
+import SwipeableHistoryItem from "@/components/SwipeableHistoryItem";
 
 interface TutorialItem {
   id: string;
@@ -18,6 +18,8 @@ export default function ClientHistoryPage() {
   const [items, setItems] = useState<TutorialItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -48,6 +50,39 @@ export default function ClientHistoryPage() {
     } catch {
       return dateStr;
     }
+  };
+
+  const handleDelete = (id: string) => {
+    setDeleteConfirmId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirmId || deleting) return;
+
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/tutorials/${deleteConfirmId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data?.error || "删除失败");
+      }
+
+      // 从列表中移除已删除的项
+      setItems((prev) => prev.filter((item) => item.id !== deleteConfirmId));
+      setDeleteConfirmId(null);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "删除失败");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const cancelDelete = () => {
+    setDeleteConfirmId(null);
   };
 
   if (loading) {
@@ -92,36 +127,56 @@ export default function ClientHistoryPage() {
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4">
-          {items.map((item) => (
-            <Link
-              key={item.id}
-              href={`/tutorial/${item.id}`}
-              className="block cursor-pointer pixel-wooden-card p-4 transition-shadow hover:shadow-lg"
+        <>
+          <div className="grid grid-cols-1 gap-4">
+            {items.map((item) => (
+              <SwipeableHistoryItem
+                key={item.id}
+                item={item}
+                onDelete={handleDelete}
+                formatDate={formatDate}
+              />
+            ))}
+          </div>
+
+          {/* 删除确认对话框 - 居中显示 */}
+          {deleteConfirmId && (
+            <div 
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
+              onClick={cancelDelete}
             >
-              <div className="mb-2 flex items-start justify-between">
-                <div className="flex-1">
-                  <h3 className="pixel-font text-lg font-medium" style={{ color: '#6b5335' }}>
-                    {item.title || item.input_text}
-                  </h3>
-                  {item.title && item.input_text !== item.title && (
-                    <p className="pixel-font mt-1 text-sm" style={{ color: '#8b6f47' }}>{item.input_text}</p>
-                  )}
+              <div 
+                className="pixel-wooden-container p-6 w-full max-w-md"
+                onClick={(e) => e.stopPropagation()}
+                style={{ backgroundColor: '#faf5ed' }}
+              >
+                <h3 className="pixel-font text-lg font-medium mb-4" style={{ color: '#6b5335' }}>
+                  确认删除
+                </h3>
+                <p className="pixel-font mb-6" style={{ color: '#6b5335' }}>
+                  确定要删除这条历史记录吗？此操作无法撤销。
+                </p>
+                <div className="flex gap-3 justify-end">
+                  <button
+                    className="pixel-wooden-button px-4 py-2"
+                    onClick={cancelDelete}
+                    disabled={deleting}
+                  >
+                    取消
+                  </button>
+                  <button
+                    className="pixel-wooden-button px-4 py-2"
+                    onClick={confirmDelete}
+                    disabled={deleting}
+                    style={{ backgroundColor: '#dc2626', color: 'white' }}
+                  >
+                    {deleting ? "删除中..." : "确认删除"}
+                  </button>
                 </div>
-                {item.completed && (
-                  <span className="pixel-font ml-2 pixel-wooden-card px-2 py-1 text-xs" style={{ color: '#6b5335', backgroundColor: '#e8f5e9' }}>
-                    已完成
-                  </span>
-                )}
               </div>
-              <ProgressBarSimple progress={item.progress} />
-              <div className="pixel-font mt-2 flex items-center justify-between text-xs" style={{ color: '#8b6f47' }}>
-                <span>创建于 {formatDate(item.created_at)}</span>
-                {item.completed_at && <span>完成于 {formatDate(item.completed_at)}</span>}
-              </div>
-            </Link>
-          ))}
-        </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

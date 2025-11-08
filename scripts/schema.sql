@@ -66,15 +66,15 @@ create table if not exists user_badges (
   user_id uuid references profiles(id),
   badge_id uuid references badges(id),
   awarded_at timestamptz default now(),
-  source_tutorial uuid references tutorial_instances(id)
+  source_tutorial uuid references tutorial_instances(id) on delete set null
 );
 
 -- AI responses audit
 create table if not exists ai_responses (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references profiles(id),
-  tutorial_id uuid references tutorial_instances(id),
-  step_id uuid references steps(id),
+  tutorial_id uuid references tutorial_instances(id) on delete cascade,
+  step_id uuid references steps(id) on delete cascade,
   model text,
   prompt text,
   response jsonb,

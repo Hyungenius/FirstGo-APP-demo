@@ -32,10 +32,14 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 
 // 热门活动列表
 const activities = [
+  // 原有10个活动
   "健身",
   "做饭", "旅行",
   "蹦极", "购物", "开车",
-  "画画", "唱歌", "读书", "拼豆"
+  "画画", "唱歌", "读书", "拼豆",
+  // 新增11个活动
+  "潜水", "滑板", "街舞", "跳伞", "泡温泉",
+  "约会", "针织", "冲浪", "爬山", "实习", "游泳"
 ];
 
 type PreGenResult = 
