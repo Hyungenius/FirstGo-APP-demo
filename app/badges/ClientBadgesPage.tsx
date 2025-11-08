@@ -1,7 +1,126 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
+
+// 视频播放组件，优化移动端播放
+function VideoPlayer({ src, onError }: { src: string; onError?: () => void }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [showPlayButton, setShowPlayButton] = useState(false);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    // 设置视频属性，确保移动端兼容
+    video.setAttribute('playsinline', 'true');
+    video.setAttribute('webkit-playsinline', 'true');
+    video.setAttribute('x5-playsinline', 'true'); // 腾讯 X5 内核
+    video.setAttribute('x5-video-player-type', 'h5');
+    video.setAttribute('x5-video-player-fullscreen', 'false');
+
+    // 尝试播放视频
+    const attemptPlay = () => {
+      const playPromise = video.play();
+      
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            setShowPlayButton(false);
+          })
+          .catch((error) => {
+            console.log("视频自动播放失败:", error);
+            // 在移动端，自动播放可能失败，显示播放按钮
+            setShowPlayButton(true);
+          });
+      }
+    };
+
+    // 监听多个事件，确保视频能播放
+    const handleCanPlay = () => attemptPlay();
+    const handleLoadedData = () => attemptPlay();
+    const handleLoadedMetadata = () => attemptPlay();
+
+    video.addEventListener('canplay', handleCanPlay);
+    video.addEventListener('loadeddata', handleLoadedData);
+    video.addEventListener('loadedmetadata', handleLoadedMetadata);
+    
+    // 如果视频已经可以播放，立即尝试播放
+    if (video.readyState >= 2) {
+      attemptPlay();
+    }
+    
+    return () => {
+      video.removeEventListener('canplay', handleCanPlay);
+      video.removeEventListener('loadeddata', handleLoadedData);
+      video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+    };
+  }, [src]);
+
+  const handlePlayClick = () => {
+    const video = videoRef.current;
+    if (video) {
+      video.play()
+        .then(() => {
+          setShowPlayButton(false);
+        })
+        .catch((error) => {
+          console.error("手动播放失败:", error);
+        });
+    }
+  };
+
+  // 根据文件扩展名确定 MIME 类型
+  const getVideoType = (src: string): string => {
+    if (src.endsWith('.mov')) {
+      return 'video/quicktime';
+    } else if (src.endsWith('.mp4')) {
+      return 'video/mp4';
+    }
+    return 'video/mp4'; // 默认
+  };
+
+  return (
+    <div className="relative w-full">
+      <video
+        ref={videoRef}
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="auto"
+        className="w-full h-auto rounded-lg"
+        style={{
+          objectFit: 'contain',
+          imageRendering: 'pixelated',
+        }}
+        onError={(e) => {
+          console.error("视频加载错误:", e);
+          const video = e.currentTarget;
+          console.error("视频错误详情:", {
+            error: video.error?.code,
+            message: video.error?.message,
+            networkState: video.networkState,
+            readyState: video.readyState,
+            src: video.src
+          });
+          onError?.();
+        }}
+      >
+        <source src={src} type={getVideoType(src)} />
+        您的浏览器不支持视频播放。
+      </video>
+      {showPlayButton && (
+        <button
+          onClick={handlePlayClick}
+          className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 rounded-lg cursor-pointer transition-opacity hover:bg-opacity-40"
+        >
+          <div className="pixel-font text-white text-3xl">▶️</div>
+        </button>
+      )}
+    </div>
+  );
+}
 
 interface Badge {
   id: string;
@@ -264,21 +383,13 @@ export default function ClientBadgesPage() {
               >
                 {isPlaying ? (
                   <div className="mb-2 w-full">
-                    <video
+                    <VideoPlayer 
                       src={getAnimationVideo(inputText)}
-                      autoPlay
-                      loop
-                      muted
-                      playsInline
-                      preload="auto"
-                      className="w-full h-auto rounded-lg"
-                      style={{
-                        objectFit: 'contain',
-                        imageRendering: 'pixelated'
+                      onError={() => {
+                        // 视频加载失败时，隐藏视频显示 emoji
+                        setPlayingVideoId(null);
                       }}
-                    >
-                      您的浏览器不支持视频播放。
-                    </video>
+                    />
                   </div>
                 ) : (
                   <div className="mb-2 text-4xl">{emoji}</div>
