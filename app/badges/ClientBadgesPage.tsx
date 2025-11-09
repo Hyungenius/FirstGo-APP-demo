@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
+import { normalizeActivityName } from "@/lib/badgeUtils";
 
 // 视频播放组件，优化移动端播放
 function VideoPlayer({ src, onError }: { src: string; onError?: () => void }) {
@@ -284,9 +285,10 @@ export default function ClientBadgesPage() {
     return <div className="p-6 pixel-font" style={{ backgroundColor: '#f5f0e8', color: '#8b0000' }}>{error}</div>;
   }
 
-  // 按 input_text 合并相同的教程，统计完成次数
+  // 按标准化后的活动名称合并相同的教程，统计完成次数
   interface MergedBadge {
-    inputText: string;
+    normalizedName: string; // 标准化后的活动名称（用于显示）
+    originalInputTexts: string[]; // 原始输入文本列表（用于显示所有变体）
     count: number;
     firstAwardedAt: string; // 第一次完成的时间
     badgeIds: string[]; // 用于视频播放的唯一标识
@@ -297,9 +299,11 @@ export default function ClientBadgesPage() {
 
   badges.forEach((item) => {
     const inputText = item.tutorial_instances?.input_text || "完成教程";
+    // 使用标准化后的活动名称作为合并键
+    const normalizedName = normalizeActivityName(inputText);
     
-    if (mergedBadgesMap.has(inputText)) {
-      const existing = mergedBadgesMap.get(inputText)!;
+    if (mergedBadgesMap.has(normalizedName)) {
+      const existing = mergedBadgesMap.get(normalizedName)!;
       existing.count += 1;
       existing.badgeIds.push(item.id);
       // 如果这个时间更早，更新第一次完成时间
@@ -308,9 +312,14 @@ export default function ClientBadgesPage() {
       if (currentTime < firstTime) {
         existing.firstAwardedAt = item.awarded_at;
       }
+      // 添加原始输入文本（如果不同）
+      if (!existing.originalInputTexts.includes(inputText)) {
+        existing.originalInputTexts.push(inputText);
+      }
     } else {
-      mergedBadgesMap.set(inputText, {
-        inputText,
+      mergedBadgesMap.set(normalizedName, {
+        normalizedName,
+        originalInputTexts: [inputText],
         count: 1,
         firstAwardedAt: item.awarded_at,
         badgeIds: [item.id],
@@ -363,15 +372,16 @@ export default function ClientBadgesPage() {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {mergedBadges.map((merged, index) => {
-            const inputText = merged.inputText;
-            const emoji = getEmojiForTutorial(inputText);
-            // 使用第一个 badgeId 作为播放标识
-            const videoKey = `${inputText}-${merged.badgeIds[0]}`;
+            // 使用标准化后的活动名称作为显示名称
+            const displayName = merged.normalizedName;
+            const emoji = getEmojiForTutorial(displayName);
+            // 使用标准化名称和第一个 badgeId 作为播放标识
+            const videoKey = `${displayName}-${merged.badgeIds[0]}`;
             const isPlaying = playingVideoId === videoKey;
             
             return (
               <div
-                key={inputText}
+                key={displayName}
                 className="relative pixel-wooden-card p-4 text-center cursor-pointer transition-transform hover:scale-105"
                 onClick={() => {
                   if (isPlaying) {
@@ -384,7 +394,7 @@ export default function ClientBadgesPage() {
                 {isPlaying ? (
                   <div className="mb-2 w-full">
                     <VideoPlayer 
-                      src={getAnimationVideo(inputText)}
+                      src={getAnimationVideo(displayName)}
                       onError={() => {
                         // 视频加载失败时，隐藏视频显示 emoji
                         setPlayingVideoId(null);
@@ -395,7 +405,7 @@ export default function ClientBadgesPage() {
                   <div className="mb-2 text-4xl">{emoji}</div>
                 )}
                 <h3 className="pixel-font mb-1 text-lg font-medium" style={{ color: '#6b5335' }}>
-                  {inputText}
+                  {displayName}
                 </h3>
                 <p className="pixel-font mb-2 text-sm" style={{ color: '#6b5335' }}>
                   已完成 {merged.count} 次

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSupabase } from "@/lib/serverSupabase";
 import type { RouteParams } from "@/types/route";
+import { normalizeActivityName, generateBadgeKey } from "@/lib/badgeUtils";
 
 export async function PATCH(_req: Request, ctx: RouteParams) {
   const supabase = await getServerSupabase();
@@ -23,25 +24,26 @@ export async function PATCH(_req: Request, ctx: RouteParams) {
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  // 为这个教程创建唯一的勋章
-  // 使用教程ID作为勋章key，确保每个教程有唯一的勋章
-  const badgeKey = `tutorial_${tutorialId}`;
+  // 使用标准化后的活动名称创建勋章
+  // 这样可以确保相似的活动（如"健身"和"第一次去健身房"）合并到同一个勋章
+  const inputText = data?.input_text || "完成教程";
+  const normalizedActivityName = normalizeActivityName(inputText);
+  const badgeKey = generateBadgeKey(normalizedActivityName);
   let badgeId: string | null = null;
 
-  // 查找是否存在该教程的勋章定义
+  // 查找是否存在该活动的勋章定义（使用标准化后的名称）
   const { data: existingBadge } = await supabase.from("badges").select("id").eq("key", badgeKey).single();
 
   if (existingBadge) {
     badgeId = existingBadge.id;
   } else {
-    // 创建新勋章定义，使用用户输入的文字作为标题
-    const tutorialTitle = data?.input_text || "完成教程";
+    // 创建新勋章定义，使用标准化后的活动名称作为标题
     const { data: newBadge, error: badgeErr } = await supabase
       .from("badges")
       .insert([
         {
           key: badgeKey,
-          title: tutorialTitle,
+          title: normalizedActivityName,
           description: "完成了一个教程",
           icon_url: null,
         },
