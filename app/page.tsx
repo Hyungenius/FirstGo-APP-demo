@@ -205,7 +205,7 @@ export default function Home() {
                         <div
                           className="absolute inset-0 flex items-center justify-center pixel-font text-xs font-medium pointer-events-none"
                           style={{
-                            color: '#6b5335',
+                            color: '#4a3428',
                             textShadow: '1px 1px 2px rgba(255,255,255,0.8), -1px -1px 2px rgba(255,255,255,0.8)'
                           }}
                         >
