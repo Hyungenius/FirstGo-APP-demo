@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSupabase } from "@/lib/serverSupabase";
 import { callAI, parseAIOutput, buildTutorialPrompt } from "@/lib/ai";
+import { validateInput, sanitizeInput } from "@/lib/inputValidation";
 
 export async function POST(req: Request) {
   const supabase = await getServerSupabase();
@@ -20,9 +21,60 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const inputText = String(body?.input_text ?? "").trim();
-  if (!inputText) {
+  const rawInputText = String(body?.input_text ?? "").trim();
+  if (!rawInputText) {
     return NextResponse.json({ error: "input_text is required" }, { status: 400 });
+  }
+
+  // 输入验证
+  const validation = validateInput(rawInputText, {
+    minLength: 2,
+    maxLength: 50,
+    allowSpecialChars: false,
+    checkSensitiveWords: true,
+  });
+
+  if (!validation.valid) {
+    return NextResponse.json({ error: validation.error || "输入验证失败" }, { status: 400 });
+  }
+
+  // 清理输入（防止XSS等攻击）
+  const inputText = sanitizeInput(rawInputText);
+
+  // 频率限制：检查用户最近1分钟内创建的教程数量
+  const oneMinuteAgo = new Date(Date.now() - 60 * 1000).toISOString();
+  const { count: recentCount } = await supabase
+    .from("tutorial_instances")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .gte("created_at", oneMinuteAgo);
+
+  if (recentCount && recentCount >= 3) {
+    return NextResponse.json(
+      { error: "创建频率过高，请稍后再试（每分钟最多3次）" },
+      { status: 429 }
+    );
+  }
+
+  // 重复输入检查：检查用户最近5分钟内是否创建过相同内容的教程
+  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+  const { data: recentTutorials } = await supabase
+    .from("tutorial_instances")
+    .select("input_text")
+    .eq("user_id", user.id)
+    .gte("created_at", fiveMinutesAgo);
+
+  if (recentTutorials) {
+    const normalizedInput = inputText.trim().toLowerCase();
+    const isDuplicate = recentTutorials.some(
+      (t) => t.input_text?.trim().toLowerCase() === normalizedInput
+    );
+    if (isDuplicate) {
+      return NextResponse.json(
+        { error: "您最近已创建过相同内容的教程，请稍后再试" },
+        { status: 400 }
+      );
+    }
   }
 
   try {
