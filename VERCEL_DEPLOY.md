@@ -36,10 +36,11 @@ NEXT_PUBLIC_SUPABASE_URL=你的Supabase项目URL
 NEXT_PUBLIC_SUPABASE_ANON_KEY=你的Supabase匿名密钥
 ```
 
-#### AI API 配置（硅基流动）
+#### DeepSeek API 配置
 ```
-SILICONFLOW_API_KEY=你的硅基流动API密钥
-SILICONFLOW_MODEL=deepseek-chat  （可选，不设置则使用默认值）
+SUPABASE_SERVICE_ROLE_KEY=你的Supabase服务端密钥
+DEEPSEEK_API_KEY=你的DeepSeek API密钥
+DEEPSEEK_MODEL=deepseek-flash
 ```
 
 ### 步骤 5：部署
@@ -77,8 +78,9 @@ vercel
 # 添加环境变量
 vercel env add NEXT_PUBLIC_SUPABASE_URL
 vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY
-vercel env add SILICONFLOW_API_KEY
-vercel env add SILICONFLOW_MODEL
+vercel env add SUPABASE_SERVICE_ROLE_KEY
+vercel env add DEEPSEEK_API_KEY
+vercel env add DEEPSEEK_MODEL
 
 # 应用到生产环境
 vercel env pull .env.local
@@ -94,8 +96,9 @@ vercel --prod
 ### ✅ 环境变量
 - [ ] `NEXT_PUBLIC_SUPABASE_URL` 已配置
 - [ ] `NEXT_PUBLIC_SUPABASE_ANON_KEY` 已配置
-- [ ] `SILICONFLOW_API_KEY` 已配置
-- [ ] `SILICONFLOW_MODEL` 已配置（可选）
+- [ ] `SUPABASE_SERVICE_ROLE_KEY` 已配置
+- [ ] `DEEPSEEK_API_KEY` 已配置
+- [ ] `DEEPSEEK_MODEL` 已配置为 `deepseek-flash`
 
 ### ✅ Supabase 配置
 - [ ] 数据库 schema 已创建（执行 `scripts/schema.sql`）
@@ -131,7 +134,7 @@ vercel --prod
 
 ### 问题 4：AI 功能不工作
 **解决方案：**
-- 检查 `SILICONFLOW_API_KEY` 是否正确
+- 检查 `DEEPSEEK_API_KEY` 是否正确
 - 检查 API 密钥是否有效且有足够的配额
 - 查看 Vercel 函数日志中的错误信息
 
@@ -179,4 +182,3 @@ vercel logs
 ---
 
 **部署成功后，你的应用就可以通过 Vercel 提供的 URL 访问了！**
-

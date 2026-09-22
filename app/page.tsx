@@ -1,10 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import DebugSupabase from "@/components/DebugSupabase";
-import HomeCreateStarter from "@/components/HomeCreateStarter";
 import AuthGuard from "@/components/AuthGuard";
-import PreGenerateTutorials from "@/components/PreGenerateTutorials";
 import { useState, useRef } from "react";
 import InputFirstThing, { InputFirstThingRef } from "@/components/InputFirstThing";
 import { useRouter } from "next/navigation";
@@ -64,7 +61,6 @@ export default function Home() {
   
   return (
     <AuthGuard>
-      <PreGenerateTutorials />
       <div className="relative flex min-h-screen items-center justify-center" style={{ backgroundColor: '#f5f0e8' }}>
         {/* 状态栏 - 显示图标 */}
         <div className="absolute top-0 right-0 flex items-center gap-4 px-4 py-2 z-20">
@@ -244,7 +240,6 @@ export default function Home() {
             </div>
           </div>
         </main>
-        <DebugSupabase />
       </div>
     </AuthGuard>
   );

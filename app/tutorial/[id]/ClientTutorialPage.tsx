@@ -272,7 +272,7 @@ export default function ClientTutorialPage({ tutorialId }: { tutorialId: string 
         {/* 步骤列表 */}
         <div className="mb-6 space-y-3">
           {steps.map((s) => (
-            <div key={s.id} className="space-y-2">
+            <div key={`${s.id}-${s.completed ? "completed" : "pending"}`} className="space-y-2">
               <div
                 className={activeStepId === s.id ? 'border-gray-400' : ''}
                 style={{ border: activeStepId === s.id ? '1px solid #9ca3af' : 'none', borderRadius: '4px', padding: '2px' }}
@@ -478,5 +478,4 @@ export default function ClientTutorialPage({ tutorialId }: { tutorialId: string 
     </div>
   );
 }
-
 

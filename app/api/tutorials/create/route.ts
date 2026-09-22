@@ -2,9 +2,20 @@ import { NextResponse } from "next/server";
 import { getServerSupabase } from "@/lib/serverSupabase";
 import { callAI, parseAIOutput, buildTutorialPrompt } from "@/lib/ai";
 import { validateInput, sanitizeInput } from "@/lib/inputValidation";
+import { createClient } from "@supabase/supabase-js";
+
+// 用 service role 的 client 做缓存查询（绕过 RLS，跨用户读缓存）
+function getCacheClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false } }
+  );
+}
 
 export async function POST(req: Request) {
   const supabase = await getServerSupabase();
+  const cacheClient = getCacheClient();
 
   const {
     data: { user },
@@ -26,7 +37,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "input_text is required" }, { status: 400 });
   }
 
-  // 输入验证
   const validation = validateInput(rawInputText, {
     minLength: 2,
     maxLength: 50,
@@ -38,78 +48,69 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: validation.error || "输入验证失败" }, { status: 400 });
   }
 
-  // 清理输入（防止XSS等攻击）
   const inputText = sanitizeInput(rawInputText);
 
-  // 频率限制：检查用户最近1分钟内创建的教程数量
-  const oneMinuteAgo = new Date(Date.now() - 60 * 1000).toISOString();
-  const { count: recentCount } = await supabase
-    .from("tutorial_instances")
-    .select("*", { count: "exact", head: true })
-    .eq("user_id", user.id)
-    .gte("created_at", oneMinuteAgo);
-
-  if (recentCount && recentCount >= 3) {
-    return NextResponse.json(
-      { error: "创建频率过高，请稍后再试（每分钟最多3次）" },
-      { status: 429 }
-    );
-  }
-
-  // 重复输入检查：检查用户最近5分钟内是否创建过相同内容的教程
-  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-  const { data: recentTutorials } = await supabase
-    .from("tutorial_instances")
-    .select("input_text")
-    .eq("user_id", user.id)
-    .gte("created_at", fiveMinutesAgo);
-
-  if (recentTutorials) {
-    const normalizedInput = inputText.trim().toLowerCase();
-    const isDuplicate = recentTutorials.some(
-      (t) => t.input_text?.trim().toLowerCase() === normalizedInput
-    );
-    if (isDuplicate) {
-      return NextResponse.json(
-        { error: "您最近已创建过相同内容的教程，请稍后再试" },
-        { status: 400 }
-      );
-    }
-  }
-
   try {
-    let structured: ReturnType<typeof parseAIOutput>;
-    
-    // 优先检查预生成的教程
-    const { data: preGen } = await supabase
-      .from("pre_generated_tutorials")
-      .select("*")
-      .eq("input_text", inputText)
-      .single();
+    // ========== 缓存查找 ==========
+    // 用 service role client 查缓存（绕过 RLS，跨用户读）
+    const { data: cachedList } = await cacheClient
+      .from("tutorial_instances")
+      .select("id, title, description, tags, difficulty")
+      .ilike("input_text", inputText)
+      .order("created_at", { ascending: false })
+      .limit(1);
 
-    if (preGen && preGen.tutorial_data) {
-      // 使用预生成的数据
-      const tutorialData = preGen.tutorial_data as {
-        steps?: Array<{ title: string; summary: string; detail_prompt?: string }>;
-        items?: Array<{ name: string; qty?: string; note?: string }>;
-      };
-      
-      structured = {
-        title: preGen.title || "Untitled",
-        description: preGen.description || undefined,
-        tags: preGen.tags || undefined,
-        difficulty: preGen.difficulty || undefined,
-        steps: tutorialData.steps || [],
-        items: tutorialData.items || [],
-      };
+    const cached = cachedList && cachedList.length > 0 ? cachedList[0] : null;
+
+    let structured;
+    let fromCache = false;
+
+    if (cached) {
+      // 命中缓存：用 service role client 读 steps 和 items
+      const { data: cachedSteps } = await cacheClient
+        .from("steps")
+        .select("ord, title, summary, detail_prompt")
+        .eq("tutorial_id", cached.id)
+        .order("ord", { ascending: true });
+
+      const { data: cachedItems } = await cacheClient
+        .from("items")
+        .select("name, qty, note")
+        .eq("tutorial_id", cached.id);
+
+      // 只有 steps 不为空才算有效缓存（防止旧的半成品数据）
+      if (cachedSteps && cachedSteps.length > 0) {
+        structured = {
+          title: cached.title || "Untitled",
+          description: cached.description || undefined,
+          tags: cached.tags || undefined,
+          difficulty: cached.difficulty || undefined,
+          steps: (cachedSteps || []).map((s: { title: string; summary: string; detail_prompt?: string; ord: number }) => ({
+            title: s.title,
+            summary: s.summary,
+            detail_prompt: s.detail_prompt,
+          })),
+          items: (cachedItems || []).map((i: { name: string; qty?: string | null; note?: string | null }) => ({
+            name: i.name,
+            qty: i.qty ?? undefined,
+            note: i.note ?? undefined,
+          })),
+        };
+        fromCache = true;
+      } else {
+        // 缓存是半成品（RLS 报错留下的空壳），跳过，调 AI
+        const prompt = buildTutorialPrompt(inputText);
+        const aiRaw = await callAI(prompt);
+        structured = parseAIOutput(aiRaw);
+      }
     } else {
-      // 如果没有预生成数据，调用AI生成
+      // 未命中缓存：调 AI 生成
       const prompt = buildTutorialPrompt(inputText);
       const aiRaw = await callAI(prompt);
       structured = parseAIOutput(aiRaw);
     }
 
-    // create tutorial instance
+    // 为当前用户创建新的 tutorial_instance（独立进度）
     const { data: tut, error: tutErr } = await supabase
       .from("tutorial_instances")
       .insert([
@@ -164,11 +165,9 @@ export async function POST(req: Request) {
       }
     }
 
-    return NextResponse.json({ tutorialId }, { status: 201 });
+    return NextResponse.json({ tutorialId, from_cache: fromCache }, { status: 201 });
   } catch (e) {
     const errorMessage = e instanceof Error ? e.message : "Internal Error";
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
-
-

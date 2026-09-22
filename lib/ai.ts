@@ -135,32 +135,36 @@ export function parseAIOutput(resp: unknown): AiTutorialStructured {
  * 调用 AI API 生成教程内容
  * 注意：此函数只应在 Server 环境调用
  * 
- * 当前使用：硅基流动（SiliconFlow）
- * 如需切换回 DeepSeek，请取消注释下方的 DeepSeek 代码，并注释掉硅基流动的代码
+ * 当前使用 DeepSeek 官方 API，模型由 DEEPSEEK_MODEL 配置。
  */
 export async function callAI(prompt: string): Promise<unknown> {
-  // ========== 硅基流动（SiliconFlow）- 当前使用 ==========
-  const apiKey = process.env.SILICONFLOW_API_KEY;
+  // ========== DeepSeek 直连 ==========
+  const apiKey = process.env.DEEPSEEK_API_KEY;
   if (!apiKey) {
-    throw new Error("SILICONFLOW_API_KEY 环境变量未设置");
+    throw new Error("DEEPSEEK_API_KEY 环境变量未设置");
   }
 
   const client = new OpenAI({
     apiKey,
-    baseURL: "https://api.siliconflow.cn/v1",
+    baseURL: "https://api.deepseek.com/v1",
   });
 
   try {
-    const completion = await client.chat.completions.create({
-      model: process.env.SILICONFLOW_MODEL || "deepseek-chat", // 可通过环境变量配置模型，默认使用 deepseek-chat
-      messages: [
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      temperature: 0.7,
-    });
+    const completion = await client.chat.completions.create(
+      {
+        model: process.env.DEEPSEEK_MODEL || "deepseek-chat",
+        messages: [
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        temperature: 0.7,
+      },
+      {
+        timeout: 30000, // 30 秒超时
+      }
+    );
 
     const content = completion.choices[0]?.message?.content;
     if (!content) {
@@ -262,9 +266,9 @@ export async function callAI(prompt: string): Promise<unknown> {
     }
   } catch (error) {
     if (error instanceof Error) {
-      throw new Error(`调用硅基流动 API 失败: ${error.message}`);
+      throw new Error(`调用 DeepSeek API 失败: ${error.message}`);
     }
-    throw new Error("调用硅基流动 API 失败: 未知错误");
+    throw new Error("调用 DeepSeek API 失败: 未知错误");
   }
 }
 
@@ -323,5 +327,4 @@ export async function callAI(prompt: string): Promise<unknown> {
   }
 }
 */
-
 

@@ -108,7 +108,7 @@ function VideoPlayer({ src, onError }: { src: string; onError?: () => void }) {
           onError?.();
         }}
       >
-        <source src={src} type={getVideoType(src)} />
+        <source src={src} type={getVideoType(src)} onError={() => onError?.()} />
         您的浏览器不支持视频播放。
       </video>
       {showPlayButton && (
@@ -238,7 +238,7 @@ function getAnimationVideo(inputText: string | null | undefined): string {
   if (isPaintingRelated(inputText)) {
     return "/assets/paint.mp4";
   }
-  return "/assets/xunzhang.mov";
+  return "/assets/xunzhang.mp4";
 }
 
 export default function ClientBadgesPage() {
@@ -426,4 +426,3 @@ export default function ClientBadgesPage() {
     </div>
   );
 }
-

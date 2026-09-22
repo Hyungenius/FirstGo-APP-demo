@@ -111,7 +111,7 @@ export default function CompletePage() {
                 setVideoError(true);
               }}
             >
-              <source src="/assets/done.mov" type="video/quicktime" />
+              <source src="/assets/done.mp4" type="video/mp4" onError={() => setVideoError(true)} />
               您的浏览器不支持视频播放。
             </video>
             {showPlayButton && (
@@ -151,5 +151,4 @@ export default function CompletePage() {
     </div>
   );
 }
-
 

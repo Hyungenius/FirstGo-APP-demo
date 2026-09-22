@@ -6,10 +6,11 @@ jest.mock("openai");
 
 describe("lib/ai", () => {
   // 设置测试环境变量
-  const originalEnv = process.env;
+  const originalEnv = { ...process.env };
 
   beforeAll(() => {
-    process.env.SILICONFLOW_API_KEY = "test-api-key";
+    process.env.DEEPSEEK_API_KEY = "test-api-key";
+    process.env.DEEPSEEK_MODEL = "deepseek-flash";
   });
 
   afterAll(() => {
@@ -106,7 +107,7 @@ describe("lib/ai", () => {
       const result = await callAI("测试 prompt");
 
       expect(mockCreate).toHaveBeenCalledWith({
-        model: "deepseek-chat",
+        model: "deepseek-flash",
         messages: [
           {
             role: "user",
@@ -114,7 +115,7 @@ describe("lib/ai", () => {
           },
         ],
         temperature: 0.7,
-      });
+      }, { timeout: 30000 });
 
       expect(result).toHaveProperty("title");
       expect(result).toHaveProperty("steps");
@@ -122,13 +123,12 @@ describe("lib/ai", () => {
     });
 
     it("应该在没有 API key 时抛出错误", async () => {
-      const originalApiKey = process.env.SILICONFLOW_API_KEY;
-      delete process.env.SILICONFLOW_API_KEY;
+      const originalApiKey = process.env.DEEPSEEK_API_KEY;
+      delete process.env.DEEPSEEK_API_KEY;
 
-      await expect(callAI("测试 prompt")).rejects.toThrow("SILICONFLOW_API_KEY 环境变量未设置");
+      await expect(callAI("测试 prompt")).rejects.toThrow("DEEPSEEK_API_KEY 环境变量未设置");
 
-      process.env.SILICONFLOW_API_KEY = originalApiKey;
+      process.env.DEEPSEEK_API_KEY = originalApiKey;
     });
   });
 });
-

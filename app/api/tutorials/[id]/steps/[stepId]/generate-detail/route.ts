@@ -18,7 +18,6 @@ export async function POST(_req: Request, ctx: RouteParamsWithStep) {
     return NextResponse.json({ error: "id and stepId required" }, { status: 400 });
   }
 
-  // 读取 step，检查是否已有 detail
   const { data: step, error: stepErr } = await supabase
     .from("steps")
     .select("id, tutorial_id, detail, title, summary")
@@ -29,32 +28,31 @@ export async function POST(_req: Request, ctx: RouteParamsWithStep) {
   if (stepErr) return NextResponse.json({ error: stepErr.message }, { status: 404 });
   if (!step) return NextResponse.json({ error: "Step not found" }, { status: 404 });
 
-  // 如果已有 detail，直接返回
   if (step.detail) {
     return NextResponse.json({ detail: step.detail });
   }
 
-  // 使用步骤的 summary 和 title 来生成详细说明
   const stepSummary = step.summary || step.title;
   const stepTitle = step.title;
-  
+
   if (!stepSummary || !stepTitle) {
     return NextResponse.json({ error: "Step content not found" }, { status: 400 });
   }
 
   try {
-    // 调用硅基流动 API 生成详细说明
-    const apiKey = process.env.SILICONFLOW_API_KEY;
+    const apiKey = process.env.DEEPSEEK_API_KEY;
     if (!apiKey) {
-      return NextResponse.json({ error: "SILICONFLOW_API_KEY 环境变量未设置" }, { status: 500 });
+      return NextResponse.json({ error: "DEEPSEEK_API_KEY not set" }, { status: 500 });
     }
 
     const client = new OpenAI({
       apiKey,
-      baseURL: "https://api.siliconflow.cn/v1",
+      baseURL: "https://api.deepseek.com/v1",
+      timeout: 30 * 1000,
     });
 
-    // 使用用户提供的改进版 Prompt
+    const model = process.env.DEEPSEEK_MODEL || "deepseek-flash";
+
     const prompt = `你是一个教程专家，擅长将一个步骤拆解成清晰、有条理的子任务。
 
 请你根据以下"步骤标题"和"步骤简介"，进一步展开详细说明。
@@ -67,15 +65,10 @@ export async function POST(_req: Request, ctx: RouteParamsWithStep) {
 你需要展开的步骤是："${stepSummary}" (来自 "${stepTitle}" 步骤)。
 
 请直接开始生成详细说明文本（不要返回 JSON，只返回文本）：`;
-    
+
     const completion = await client.chat.completions.create({
-      model: process.env.SILICONFLOW_MODEL || "deepseek-chat",
-      messages: [
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
+      model,
+      messages: [{ role: "user", content: prompt }],
       temperature: 0.7,
     });
 
@@ -84,8 +77,8 @@ export async function POST(_req: Request, ctx: RouteParamsWithStep) {
       throw new Error("AI 返回内容为空");
     }
 
-    // 获取纯文本内容，清理可能的 Markdown 代码块标记
-    const detailText = content.trim()
+    const detailText = content
+      .trim()
       .replace(/^```json\s*/i, "")
       .replace(/^```\s*/i, "")
       .replace(/^```markdown\s*/i, "")
@@ -93,7 +86,6 @@ export async function POST(_req: Request, ctx: RouteParamsWithStep) {
       .replace(/\s*```$/i, "")
       .trim();
 
-    // 保存到数据库
     const { error: updateErr } = await supabase
       .from("steps")
       .update({ detail: detailText })
@@ -109,4 +101,3 @@ export async function POST(_req: Request, ctx: RouteParamsWithStep) {
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
-

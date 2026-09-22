@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>First-Go · 动画素材预览</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #f5f0e8; color: #6b5335; font-family: "Microsoft YaHei", sans-serif; }
+    main { max-width: 1120px; margin: auto; padding: 32px 20px; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    h1 { font-size: 26px; margin: 0; }
+    p { line-height: 1.7; }
+    a, button { color: inherit; background: #faf5ed; padding: 10px 14px; border: 2px solid #8b6f47; border-radius: 6px; cursor: pointer; font: inherit; text-decoration: none; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 20px; margin-top: 24px; }
+    article { padding: 14px; border: 3px solid #8b6f47; border-radius: 10px; background: #faf5ed; }
+    h2 { margin: 4px 0 12px; font-size: 18px; }
+    video { width: 100%; aspect-ratio: 1; object-fit: contain; image-rendering: pixelated; background: #f5f0e8; border-radius: 5px; }
+    output { display: block; margin-top: 10px; font-size: 13px; }
+    .note { color: #8b6f47; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <main>
+    <header><h1>First-Go · 动画素材预览</h1><a href="/">返回应用</a></header>
+    <p>查看完成反馈和勋章动画。视频静音循环播放，也可以使用每张卡片下方的播放控件。</p>
+    <button id="toggle" type="button">暂停全部</button>
+    <section class="grid" aria-label="动画素材">
+      <article><h2>完成教程 · 牛仔庆祝</h2><video src="/assets/done.mp4" autoplay loop muted playsinline controls preload="auto" aria-label="完成教程动画"></video><output aria-live="polite">正在加载</output></article>
+      <article><h2>通用勋章</h2><video src="/assets/xunzhang.mp4" autoplay loop muted playsinline controls preload="auto" aria-label="通用勋章动画"></video><output aria-live="polite">正在加载</output></article>
+      <article><h2>游泳勋章</h2><video src="/assets/swim.mp4" autoplay loop muted playsinline controls preload="auto" aria-label="游泳勋章动画"></video><output aria-live="polite">正在加载</output></article>
+      <article><h2>唱歌勋章</h2><video src="/assets/sing.mp4" autoplay loop muted playsinline controls preload="auto" aria-label="唱歌勋章动画"></video><output aria-live="polite">正在加载</output></article>
+      <article><h2>画画勋章</h2><video src="/assets/paint.mp4" autoplay loop muted playsinline controls preload="auto" aria-label="画画勋章动画"></video><output aria-live="polite">正在加载</output></article>
+    </section>
+    <p class="note">这是独立的素材预览页，不创建教程或勋章。部分视频中的浅色棋盘格已包含在原始画面里。</p>
+  </main>
+  <script>
+    const videos = [...document.querySelectorAll('video')];
+    for (const video of videos) {
+      const status = video.parentElement.querySelector('output');
+      video.addEventListener('playing', () => { status.textContent = '正在播放 · ' + video.duration.toFixed(1) + ' 秒循环'; });
+      video.addEventListener('pause', () => { status.textContent = '已暂停'; });
+      video.addEventListener('error', () => { status.textContent = '加载失败，请检查浏览器是否支持此视频'; });
+      video.play().catch(() => { status.textContent = '点击播放按钮开始'; });
+    }
+    document.querySelector('#toggle').addEventListener('click', async (event) => {
+      if (videos.some(video => !video.paused)) {
+        videos.forEach(video => video.pause());
+        event.currentTarget.textContent = '播放全部';
+      } else {
+        event.currentTarget.textContent = '暂停全部';
+        await Promise.allSettled(videos.map(video => video.play()));
+      }
+    });
+  </script>
+</body>
+</html>

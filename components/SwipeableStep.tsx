@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 interface Props {
   ord: number;
@@ -43,23 +43,6 @@ export default function SwipeableStep({ ord, title, summary, completed, onComple
   const startTimeRef = useRef<number | null>(null);
   const currentXRef = useRef<number | null>(null);
   const clickTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const prevCompletedRef = useRef(completed);
-
-  // 当 completed 从 true 变为 false 时（撤销），重置 isCompleting
-  // 使用 useLayoutEffect 确保在渲染前同步重置状态，避免闪烁
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useLayoutEffect(() => {
-    const prevCompleted = prevCompletedRef.current;
-    prevCompletedRef.current = completed;
-    
-    // 如果从完成变为未完成（撤销），重置状态
-    if (prevCompleted && !completed) {
-      setIsCompleting(false);
-      setSwipeProgress(0);
-      setIsSwipeActive(false);
-    }
-  }, [completed]);
-
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     if (completed) return;
     
