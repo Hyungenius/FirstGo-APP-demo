@@ -19,3 +19,6 @@ yarn-error.log*
 # Local verification artifacts
 /_prompt_result.txt
 /_test_*.js
+
+.vercel
+.env*
